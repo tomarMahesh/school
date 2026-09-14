@@ -4,7 +4,7 @@ import { authConfig } from "@/lib/auth.config";
 
 const { auth } = NextAuth(authConfig);
 
-export default auth((req) => {
+const proxy = auth((req) => {
   const { pathname } = req.nextUrl;
   const role = req.auth?.user?.role;
 
@@ -20,6 +20,8 @@ export default auth((req) => {
     }
   }
 });
+
+export default proxy;
 
 export const config = {
   matcher: ["/admin/:path*", "/portal/:path*"],
