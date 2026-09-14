@@ -16,10 +16,11 @@ export default async function TakeAttendancePage(
     typeof searchParams.date === "string" ? searchParams.date : todayIso();
 
   const session = await auth();
-  if (session?.user.role !== "TEACHER") redirect("/portal");
+  const role = session?.user.role;
+  if (role !== "TEACHER" && role !== "PRINCIPAL") redirect("/portal");
 
-  const teacher = await prisma.teacher.findUnique({
-    where: { userId: session.user.id },
+  const staff = await prisma.staff.findUnique({
+    where: { userId: session!.user.id },
   });
 
   const klass = await prisma.class.findUnique({
@@ -27,7 +28,10 @@ export default async function TakeAttendancePage(
     include: { students: { include: { user: true } } },
   });
 
-  if (!klass || klass.teacherId !== teacher?.id) notFound();
+  // Editing attendance is limited to the class's assigned teacher, even
+  // for a Principal -- their elevated access is read-only oversight, not
+  // the ability to mark attendance for classes they don't teach.
+  if (!klass || klass.teacherId !== staff?.id) notFound();
 
   const existing = await prisma.attendance.findMany({
     where: { classId, date: new Date(date) },

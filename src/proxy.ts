@@ -15,7 +15,8 @@ const proxy = auth((req) => {
   }
 
   if (pathname.startsWith("/portal") && pathname !== "/portal/login") {
-    if (role !== "TEACHER" && role !== "STUDENT") {
+    const portalRoles = ["TEACHER", "PRINCIPAL", "STAFF", "STUDENT"];
+    if (!role || !portalRoles.includes(role)) {
       return NextResponse.redirect(new URL("/portal/login", req.url));
     }
   }

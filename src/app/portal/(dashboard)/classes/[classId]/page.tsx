@@ -8,10 +8,11 @@ export default async function ClassDetailPage(
 ) {
   const { classId } = await props.params;
   const session = await auth();
-  if (session?.user.role !== "TEACHER") redirect("/portal");
+  const role = session?.user.role;
+  if (role !== "TEACHER" && role !== "PRINCIPAL") redirect("/portal");
 
-  const teacher = await prisma.teacher.findUnique({
-    where: { userId: session.user.id },
+  const staff = await prisma.staff.findUnique({
+    where: { userId: session!.user.id },
   });
 
   const klass = await prisma.class.findUnique({
@@ -19,18 +20,28 @@ export default async function ClassDetailPage(
     include: { students: { include: { user: true } } },
   });
 
-  if (!klass || klass.teacherId !== teacher?.id) notFound();
+  if (!klass) notFound();
+
+  const isOwnClass = klass.teacherId === staff?.id;
+  if (role === "TEACHER" && !isOwnClass) notFound();
 
   return (
     <div>
       <h1 className="text-2xl font-semibold">{klass.name}</h1>
+      {role === "PRINCIPAL" && !isOwnClass && (
+        <p className="mt-1 text-sm opacity-60">
+          Read-only — you are not the assigned teacher for this class.
+        </p>
+      )}
 
-      <Link
-        href={`/portal/classes/${klass.id}/attendance`}
-        className="mt-4 inline-block rounded bg-black px-4 py-2 text-sm text-white dark:bg-white dark:text-black"
-      >
-        Take Attendance
-      </Link>
+      {isOwnClass && (
+        <Link
+          href={`/portal/classes/${klass.id}/attendance`}
+          className="mt-4 inline-block rounded bg-black px-4 py-2 text-sm text-white dark:bg-white dark:text-black"
+        >
+          Take Attendance
+        </Link>
+      )}
 
       <table className="mt-6 w-full max-w-2xl text-left text-sm">
         <thead>

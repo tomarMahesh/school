@@ -6,21 +6,21 @@ import { prisma } from "@/lib/prisma";
 
 async function requireTeacherForClass(classId: string) {
   const session = await auth();
-  if (session?.user.role !== "TEACHER") {
+  if (session?.user.role !== "TEACHER" && session?.user.role !== "PRINCIPAL") {
     throw new Error("Unauthorized");
   }
 
-  const teacher = await prisma.teacher.findUnique({
+  const staff = await prisma.staff.findUnique({
     where: { userId: session.user.id },
   });
-  if (!teacher) throw new Error("Unauthorized");
+  if (!staff) throw new Error("Unauthorized");
 
   const klass = await prisma.class.findUnique({ where: { id: classId } });
-  if (!klass || klass.teacherId !== teacher.id) {
+  if (!klass || klass.teacherId !== staff.id) {
     throw new Error("Unauthorized: not your class");
   }
 
-  return teacher;
+  return staff;
 }
 
 const VALID_STATUSES = ["PRESENT", "ABSENT", "LATE"];
@@ -30,7 +30,7 @@ export async function markAttendance(
   date: string,
   formData: FormData,
 ) {
-  const teacher = await requireTeacherForClass(classId);
+  const staff = await requireTeacherForClass(classId);
 
   const students = await prisma.student.findMany({
     where: { classId },
@@ -54,11 +54,11 @@ export async function markAttendance(
           classId,
           date: parsedDate,
           status: safeStatus,
-          markedById: teacher.id,
+          markedById: staff.id,
         },
         update: {
           status: safeStatus,
-          markedById: teacher.id,
+          markedById: staff.id,
         },
       });
     }),

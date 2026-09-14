@@ -10,36 +10,43 @@ export default async function StudentGradesPage(
 ) {
   const { classId, studentId } = await props.params;
   const session = await auth();
-  if (session?.user.role !== "TEACHER") redirect("/portal");
+  const role = session?.user.role;
+  if (role !== "TEACHER" && role !== "PRINCIPAL") redirect("/portal");
 
-  const teacher = await prisma.teacher.findUnique({
-    where: { userId: session.user.id },
+  const staff = await prisma.staff.findUnique({
+    where: { userId: session!.user.id },
   });
 
   const student = await prisma.student.findUnique({
     where: { id: studentId },
-    include: { user: true, class: true, grades: { orderBy: { createdAt: "desc" } } },
+    include: {
+      user: true,
+      class: true,
+      grades: { orderBy: { createdAt: "desc" } },
+    },
   });
 
-  if (
-    !student ||
-    student.classId !== classId ||
-    student.class?.teacherId !== teacher?.id
-  ) {
-    notFound();
-  }
+  if (!student || student.classId !== classId) notFound();
+
+  const canEdit = student.class?.teacherId === staff?.id;
+  if (role === "TEACHER" && !canEdit) notFound();
 
   const action = addGrade.bind(null, studentId);
 
   return (
     <div>
-      <h1 className="text-2xl font-semibold">
-        Grades — {student.user.name}
-      </h1>
+      <h1 className="text-2xl font-semibold">Grades — {student.user.name}</h1>
+      {!canEdit && (
+        <p className="mt-1 text-sm opacity-60">
+          Read-only — you are not the assigned teacher for this student.
+        </p>
+      )}
 
-      <div className="mt-6">
-        <GradeForm action={action} />
-      </div>
+      {canEdit && (
+        <div className="mt-6">
+          <GradeForm action={action} />
+        </div>
+      )}
 
       <table className="mt-8 w-full max-w-xl text-left text-sm">
         <thead>
@@ -47,7 +54,7 @@ export default async function StudentGradesPage(
             <th className="py-2">Subject</th>
             <th className="py-2">Term</th>
             <th className="py-2">Score</th>
-            <th className="py-2"></th>
+            {canEdit && <th className="py-2"></th>}
           </tr>
         </thead>
         <tbody>
@@ -61,17 +68,19 @@ export default async function StudentGradesPage(
               <td className="py-2">
                 {grade.score} / {grade.maxScore}
               </td>
-              <td className="py-2">
-                <DeleteButton
-                  action={deleteGrade.bind(null, grade.id, studentId)}
-                  confirmMessage={`Delete this ${grade.subject} grade?`}
-                />
-              </td>
+              {canEdit && (
+                <td className="py-2">
+                  <DeleteButton
+                    action={deleteGrade.bind(null, grade.id, studentId)}
+                    confirmMessage={`Delete this ${grade.subject} grade?`}
+                  />
+                </td>
+              )}
             </tr>
           ))}
           {student.grades.length === 0 && (
             <tr>
-              <td colSpan={4} className="py-6 text-center opacity-60">
+              <td colSpan={canEdit ? 4 : 3} className="py-6 text-center opacity-60">
                 No grades recorded yet.
               </td>
             </tr>

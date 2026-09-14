@@ -8,24 +8,24 @@ type ActionState = { error?: string };
 
 async function requireTeacherForStudent(studentId: string) {
   const session = await auth();
-  if (session?.user.role !== "TEACHER") {
+  if (session?.user.role !== "TEACHER" && session?.user.role !== "PRINCIPAL") {
     throw new Error("Unauthorized");
   }
 
-  const teacher = await prisma.teacher.findUnique({
+  const staff = await prisma.staff.findUnique({
     where: { userId: session.user.id },
   });
-  if (!teacher) throw new Error("Unauthorized");
+  if (!staff) throw new Error("Unauthorized");
 
   const student = await prisma.student.findUnique({
     where: { id: studentId },
     include: { class: true },
   });
-  if (!student || student.class?.teacherId !== teacher.id) {
+  if (!student || student.class?.teacherId !== staff.id) {
     throw new Error("Unauthorized: not your student");
   }
 
-  return teacher;
+  return staff;
 }
 
 export async function addGrade(
@@ -33,7 +33,7 @@ export async function addGrade(
   _prevState: ActionState,
   formData: FormData,
 ): Promise<ActionState> {
-  const teacher = await requireTeacherForStudent(studentId);
+  const staff = await requireTeacherForStudent(studentId);
 
   const subject = (formData.get("subject") as string)?.trim();
   const term = (formData.get("term") as string)?.trim();
@@ -59,7 +59,7 @@ export async function addGrade(
       term,
       score,
       maxScore,
-      givenById: teacher.id,
+      givenById: staff.id,
     },
   });
 

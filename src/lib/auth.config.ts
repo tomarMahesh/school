@@ -1,4 +1,5 @@
 import type { NextAuthConfig } from "next-auth";
+import type { Role } from "@/generated/prisma/enums";
 
 export const authConfig = {
   session: { strategy: "jwt" },
@@ -12,7 +13,7 @@ export const authConfig = {
     },
     session({ session, token }) {
       if (session.user) {
-        session.user.role = token.role as "ADMIN" | "TEACHER" | "STUDENT";
+        session.user.role = token.role as Role;
         session.user.id = token.sub!;
       }
       return session;

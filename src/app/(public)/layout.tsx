@@ -26,7 +26,7 @@ export default async function PublicLayout({
               </Link>
             ))}
             <Link href="/news">News &amp; Events</Link>
-            <Link href="/portal/login">Student/Teacher Login</Link>
+            <Link href="/portal/login">Staff/Student Login</Link>
           </div>
         </nav>
       </header>

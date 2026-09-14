@@ -9,7 +9,9 @@ datasource db {
 
 enum Role {
   ADMIN
+  PRINCIPAL
   TEACHER
+  STAFF
   STUDENT
 }
 
@@ -22,7 +24,7 @@ model User {
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
-  teacher Teacher?
+  staff   Staff?
   student Student?
   posts   Post[]
   pages   Page[]
@@ -31,16 +33,29 @@ model User {
   @@index([role])
 }
 
-model Teacher {
+// Profile for any non-student employee: teachers, principal, and
+// non-teaching staff (peon, accountant, etc.). `designation` is the
+// free-text job title so the admin can add new titles without a
+// schema change; `role` on the linked User drives portal permissions.
+model Staff {
   id     String @id @default(cuid())
   userId String @unique
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  subject String?
+  designation   String
+  qualification String?
+  education     String?
+  aadharNumber  String? @unique
+  subjects      String?
+  phone         String?
+  address       String?
 
   classes         Class[]
   attendanceTaken Attendance[] @relation("AttendanceMarkedBy")
   gradesGiven     Grade[]      @relation("GradeGivenBy")
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 model Student {
@@ -62,7 +77,7 @@ model Class {
   name String @unique
 
   teacherId String?
-  teacher   Teacher? @relation(fields: [teacherId], references: [id])
+  teacher   Staff?  @relation(fields: [teacherId], references: [id])
 
   students   Student[]
   attendance Attendance[]
@@ -80,7 +95,7 @@ model Attendance {
   class   Class  @relation(fields: [classId], references: [id])
 
   markedById String
-  markedBy   Teacher @relation("AttendanceMarkedBy", fields: [markedById], references: [id])
+  markedBy   Staff  @relation("AttendanceMarkedBy", fields: [markedById], references: [id])
 
   createdAt DateTime @default(now())
 
@@ -99,7 +114,7 @@ model Grade {
   student   Student @relation(fields: [studentId], references: [id], onDelete: Cascade)
 
   givenById String
-  givenBy   Teacher @relation("GradeGivenBy", fields: [givenById], references: [id])
+  givenBy   Staff  @relation("GradeGivenBy", fields: [givenById], references: [id])
 
   createdAt DateTime @default(now())
 

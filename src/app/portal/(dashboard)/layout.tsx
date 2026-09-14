@@ -7,17 +7,26 @@ export default async function PortalLayout({
   children: React.ReactNode;
 }) {
   const session = await auth();
+  const role = session?.user.role;
 
   return (
     <div className="min-h-screen">
       <header className="flex items-center justify-between border-b border-black/10 px-6 py-4 dark:border-white/10">
         <nav className="flex items-center gap-4 text-sm">
-          <span className="font-medium">Student &amp; Teacher Portal</span>
+          <span className="font-medium">Staff &amp; Student Portal</span>
           <Link href="/portal">Dashboard</Link>
-          {session?.user.role === "TEACHER" && (
-            <Link href="/portal/classes">My Classes</Link>
+          {(role === "TEACHER" || role === "PRINCIPAL") && (
+            <Link href="/portal/classes">
+              {role === "PRINCIPAL" ? "All Classes" : "My Classes"}
+            </Link>
           )}
-          {session?.user.role === "STUDENT" && (
+          {role === "PRINCIPAL" && (
+            <>
+              <Link href="/portal/staff">Staff Directory</Link>
+              <Link href="/portal/all-students">All Students</Link>
+            </>
+          )}
+          {role === "STUDENT" && (
             <>
               <Link href="/portal/attendance">Attendance</Link>
               <Link href="/portal/grades">Grades</Link>
