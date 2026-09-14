@@ -1,0 +1,162 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "mysql"
+}
+
+enum Role {
+  ADMIN
+  TEACHER
+  STUDENT
+}
+
+model User {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  passwordHash String
+  name         String
+  role         Role
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  teacher Teacher?
+  student Student?
+  posts   Post[]
+  pages   Page[]
+  media   Media[]
+
+  @@index([role])
+}
+
+model Teacher {
+  id     String @id @default(cuid())
+  userId String @unique
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  subject String?
+
+  classes         Class[]
+  attendanceTaken Attendance[] @relation("AttendanceMarkedBy")
+  gradesGiven     Grade[]      @relation("GradeGivenBy")
+}
+
+model Student {
+  id     String @id @default(cuid())
+  userId String @unique
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  classId String?
+  class   Class?  @relation(fields: [classId], references: [id])
+
+  attendance Attendance[]
+  grades     Grade[]
+
+  @@index([classId])
+}
+
+model Class {
+  id   String @id @default(cuid())
+  name String @unique
+
+  teacherId String?
+  teacher   Teacher? @relation(fields: [teacherId], references: [id])
+
+  students   Student[]
+  attendance Attendance[]
+}
+
+model Attendance {
+  id     String   @id @default(cuid())
+  date   DateTime @db.Date
+  status String
+
+  studentId String
+  student   Student @relation(fields: [studentId], references: [id], onDelete: Cascade)
+
+  classId String
+  class   Class  @relation(fields: [classId], references: [id])
+
+  markedById String
+  markedBy   Teacher @relation("AttendanceMarkedBy", fields: [markedById], references: [id])
+
+  createdAt DateTime @default(now())
+
+  @@unique([studentId, date])
+  @@index([classId, date])
+}
+
+model Grade {
+  id      String @id @default(cuid())
+  subject String
+  score   Float
+  maxScore Float
+  term    String
+
+  studentId String
+  student   Student @relation(fields: [studentId], references: [id], onDelete: Cascade)
+
+  givenById String
+  givenBy   Teacher @relation("GradeGivenBy", fields: [givenById], references: [id])
+
+  createdAt DateTime @default(now())
+
+  @@index([studentId, term])
+}
+
+model Page {
+  id        String   @id @default(cuid())
+  slug      String   @unique
+  title     String
+  content   String   @db.LongText
+  published Boolean  @default(false)
+
+  authorId String
+  author   User   @relation(fields: [authorId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+enum PostCategory {
+  NEWS
+  EVENT
+  ANNOUNCEMENT
+}
+
+model Post {
+  id          String       @id @default(cuid())
+  title       String
+  slug        String       @unique
+  content     String       @db.LongText
+  category    PostCategory
+  published   Boolean      @default(false)
+  publishedAt DateTime?
+
+  authorId String
+  author   User   @relation(fields: [authorId], references: [id])
+
+  media Media[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([category, publishedAt])
+}
+
+model Media {
+  id       String  @id @default(cuid())
+  url      String
+  filename String
+  mimeType String
+
+  uploadedById String
+  uploadedBy   User   @relation(fields: [uploadedById], references: [id])
+
+  postId String?
+  post   Post?   @relation(fields: [postId], references: [id])
+
+  createdAt DateTime @default(now())
+}
