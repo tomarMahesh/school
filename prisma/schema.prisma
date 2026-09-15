@@ -205,3 +205,15 @@ model Media {
 
   createdAt DateTime @default(now())
 }
+
+// Inquiries submitted through the public contact form.
+model ContactMessage {
+  id      String @id @default(cuid())
+  name    String
+  email   String
+  phone   String?
+  message String @db.Text
+  read    Boolean @default(false)
+
+  createdAt DateTime @default(now())
+}

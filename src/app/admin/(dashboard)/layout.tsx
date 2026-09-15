@@ -21,6 +21,7 @@ export default async function AdminLayout({
           <Link href="/admin/subjects">Subjects</Link>
           <Link href="/admin/sections">Sections</Link>
           <Link href="/admin/academic-years">Academic Years</Link>
+          <Link href="/admin/messages">Messages</Link>
         </nav>
         {session && (
           <form

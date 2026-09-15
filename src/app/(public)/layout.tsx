@@ -1,42 +1,82 @@
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
+import { SiteNav } from "@/components/site/SiteNav";
+import { NoticeMarquee } from "@/components/site/NoticeMarquee";
+import { FloatingActions } from "@/components/site/FloatingActions";
+import { SchoolLogo } from "@/components/site/SchoolLogo";
+
+const SCHOOL_NAME = "Shri Brijmohan Sharma Ismarak Inter College";
 
 export default async function PublicLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const pages = await prisma.page.findMany({
-    where: { published: true },
-    select: { slug: true, title: true },
-    orderBy: { title: "asc" },
-  });
+  const [pages, notices] = await Promise.all([
+    prisma.page.findMany({
+      where: { published: true },
+      select: { slug: true, title: true },
+      orderBy: { title: "asc" },
+    }),
+    prisma.post.findMany({
+      where: { published: true },
+      orderBy: { publishedAt: "desc" },
+      take: 8,
+      select: { title: true },
+    }),
+  ]);
+
+  const noticeText =
+    notices.length > 0
+      ? notices.map((n) => n.title)
+      : ["Welcome to our school website — check back here for the latest notices."];
 
   return (
-    <div className="flex min-h-full flex-col">
-      <header className="border-b border-black/10 dark:border-white/10">
-        <nav className="mx-auto flex max-w-4xl items-center justify-between px-6 py-4">
-          <Link href="/" className="font-semibold">
-            School Portal
-          </Link>
-          <div className="flex gap-6 text-sm">
-            {pages.map((page) => (
-              <Link key={page.slug} href={`/${page.slug}`}>
-                {page.title}
-              </Link>
-            ))}
-            <Link href="/news">News &amp; Events</Link>
-            <Link href="/portal/login">Staff/Student Login</Link>
+    <div className="flex min-h-full flex-col bg-white text-[#0f3d63]">
+      <SiteNav schoolName={SCHOOL_NAME} />
+      <NoticeMarquee notices={noticeText} />
+      <FloatingActions />
+
+      <main className="flex-1 pt-24">{children}</main>
+
+      <footer className="bg-[#0f3d63] px-6 py-10 text-white">
+        <div className="mx-auto grid max-w-5xl gap-8 sm:grid-cols-3">
+          <div>
+            <div className="flex items-center gap-2">
+              <SchoolLogo className="h-8 w-8" />
+              <span className="font-semibold">{SCHOOL_NAME}</span>
+            </div>
+            <p className="mt-3 text-sm text-white/70">
+              Committed to academic excellence and holistic student growth.
+            </p>
           </div>
-        </nav>
-      </header>
-
-      <main className="mx-auto w-full max-w-4xl flex-1 px-6 py-10">
-        {children}
-      </main>
-
-      <footer className="border-t border-black/10 px-6 py-6 text-center text-sm opacity-60 dark:border-white/10">
-        <Link href="/admin/login">Admin</Link>
+          <div>
+            <h4 className="font-semibold">Quick Links</h4>
+            <ul className="mt-2 flex flex-col gap-1 text-sm text-white/70">
+              <li><Link href="/">Home</Link></li>
+              <li><Link href="/about">About</Link></li>
+              <li><Link href="/classes">Classes</Link></li>
+              <li><Link href="/gallery">Gallery</Link></li>
+              <li><Link href="/contact">Contact</Link></li>
+              <li><Link href="/news">News &amp; Events</Link></li>
+              {pages.map((page) => (
+                <li key={page.slug}>
+                  <Link href={`/${page.slug}`}>{page.title}</Link>
+                </li>
+              ))}
+            </ul>
+          </div>
+          <div>
+            <h4 className="font-semibold">Portal</h4>
+            <ul className="mt-2 flex flex-col gap-1 text-sm text-white/70">
+              <li><Link href="/portal/login">Staff/Student Login</Link></li>
+              <li><Link href="/admin/login">Admin</Link></li>
+            </ul>
+          </div>
+        </div>
+        <p className="mx-auto mt-8 max-w-5xl border-t border-white/10 pt-6 text-xs text-white/50">
+          © {new Date().getFullYear()} {SCHOOL_NAME}. All rights reserved.
+        </p>
       </footer>
     </div>
   );
