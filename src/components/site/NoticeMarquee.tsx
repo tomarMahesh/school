@@ -5,12 +5,16 @@ export function NoticeMarquee({ notices }: { notices: string[] }) {
   const items = [...notices, ...notices];
 
   return (
-    <div className="fixed inset-x-0 top-[60px] z-40 flex items-center gap-3 overflow-hidden bg-[#d4a017] py-1.5 text-sm font-medium text-[#0f3d63]">
-      <span className="shrink-0 border-r border-[#0f3d63]/30 px-3">Notices</span>
-      <div className="marquee-track flex shrink-0 gap-16 whitespace-nowrap">
-        {items.map((notice, i) => (
-          <span key={i}>{notice}</span>
-        ))}
+    <div className="flex items-stretch overflow-hidden bg-[#d4a017] text-sm font-medium text-[#0f3d63]">
+      <span className="shrink-0 bg-red-600 px-4 py-2 font-semibold text-white">
+        Notices
+      </span>
+      <div className="flex flex-1 items-center overflow-hidden py-2">
+        <div className="marquee-track flex shrink-0 gap-16 whitespace-nowrap pl-4">
+          {items.map((notice, i) => (
+            <span key={i}>{notice}</span>
+          ))}
+        </div>
       </div>
       <style>{`
         .marquee-track {

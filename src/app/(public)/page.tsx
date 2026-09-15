@@ -1,15 +1,22 @@
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import { SchoolLogo } from "@/components/site/SchoolLogo";
+import { NoticeMarquee } from "@/components/site/NoticeMarquee";
 
 const SCHOOL_NAME = "Shri Brijmohan Sharma Ismarak Inter College";
 
 export default async function HomePage() {
-  const posts = await prisma.post.findMany({
+  const recentPosts = await prisma.post.findMany({
     where: { published: true },
     orderBy: { publishedAt: "desc" },
-    take: 3,
+    take: 8,
   });
+  const posts = recentPosts.slice(0, 3);
+
+  const noticeText =
+    recentPosts.length > 0
+      ? recentPosts.map((p) => p.title)
+      : ["Welcome to our school website — check back here for the latest notices."];
 
   return (
     <div>
@@ -37,6 +44,8 @@ export default async function HomePage() {
           </Link>
         </div>
       </section>
+
+      <NoticeMarquee notices={noticeText} />
 
       <section className="mx-auto max-w-4xl px-6 py-16">
         <h2 className="text-center text-2xl font-bold">Latest News &amp; Events</h2>

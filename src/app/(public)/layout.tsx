@@ -1,7 +1,6 @@
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import { SiteNav } from "@/components/site/SiteNav";
-import { NoticeMarquee } from "@/components/site/NoticeMarquee";
 import { FloatingActions } from "@/components/site/FloatingActions";
 import { SchoolLogo } from "@/components/site/SchoolLogo";
 
@@ -12,32 +11,18 @@ export default async function PublicLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const [pages, notices] = await Promise.all([
-    prisma.page.findMany({
-      where: { published: true },
-      select: { slug: true, title: true },
-      orderBy: { title: "asc" },
-    }),
-    prisma.post.findMany({
-      where: { published: true },
-      orderBy: { publishedAt: "desc" },
-      take: 8,
-      select: { title: true },
-    }),
-  ]);
-
-  const noticeText =
-    notices.length > 0
-      ? notices.map((n) => n.title)
-      : ["Welcome to our school website — check back here for the latest notices."];
+  const pages = await prisma.page.findMany({
+    where: { published: true },
+    select: { slug: true, title: true },
+    orderBy: { title: "asc" },
+  });
 
   return (
     <div className="flex min-h-full flex-col bg-white text-[#0f3d63]">
       <SiteNav schoolName={SCHOOL_NAME} />
-      <NoticeMarquee notices={noticeText} />
       <FloatingActions />
 
-      <main className="flex-1 pt-24">{children}</main>
+      <main className="flex-1 pt-20">{children}</main>
 
       <footer className="bg-[#0f3d63] px-6 py-10 text-white">
         <div className="mx-auto grid max-w-5xl gap-8 sm:grid-cols-3">
