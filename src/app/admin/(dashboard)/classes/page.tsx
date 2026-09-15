@@ -1,7 +1,5 @@
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
-import { deleteClass } from "@/lib/actions/classes";
-import { DeleteButton } from "@/components/admin/DeleteButton";
 
 export default async function AdminClassesPage() {
   const classes = await prisma.class.findMany({
@@ -36,14 +34,10 @@ export default async function AdminClassesPage() {
               <td className="py-2">{klass.name}</td>
               <td className="py-2 opacity-70">{klass.teacher?.user.name ?? "—"}</td>
               <td className="py-2">{klass._count.students}</td>
-              <td className="flex gap-4 py-2">
+              <td className="py-2">
                 <Link href={`/admin/classes/${klass.id}`} className="underline">
                   Edit
                 </Link>
-                <DeleteButton
-                  action={deleteClass.bind(null, klass.id)}
-                  confirmMessage={`Delete class "${klass.name}"? This will fail if students are still assigned to it.`}
-                />
               </td>
             </tr>
           ))}

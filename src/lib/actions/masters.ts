@@ -122,3 +122,46 @@ export async function deleteAcademicYear(id: string) {
   await prisma.academicYear.delete({ where: { id } });
   revalidatePath("/admin/academic-years");
 }
+
+// --- Streams (add/edit only, no delete) ---
+
+export async function createStream(
+  _prevState: ActionState,
+  formData: FormData,
+): Promise<ActionState> {
+  await requireAdmin();
+  const name = (formData.get("name") as string)?.trim();
+  if (!name) return { error: "Name is required." };
+
+  try {
+    await prisma.stream.create({ data: { name } });
+  } catch (err) {
+    const dup = duplicateError(err, "stream");
+    if (dup) return dup;
+    throw err;
+  }
+
+  revalidatePath("/admin/streams");
+  redirect("/admin/streams");
+}
+
+export async function updateStream(
+  id: string,
+  _prevState: ActionState,
+  formData: FormData,
+): Promise<ActionState> {
+  await requireAdmin();
+  const name = (formData.get("name") as string)?.trim();
+  if (!name) return { error: "Name is required." };
+
+  try {
+    await prisma.stream.update({ where: { id }, data: { name } });
+  } catch (err) {
+    const dup = duplicateError(err, "stream");
+    if (dup) return dup;
+    throw err;
+  }
+
+  revalidatePath("/admin/streams");
+  redirect("/admin/streams");
+}

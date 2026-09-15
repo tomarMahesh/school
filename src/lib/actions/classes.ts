@@ -71,9 +71,3 @@ export async function updateClass(
   revalidatePath("/admin/classes");
   redirect("/admin/classes");
 }
-
-export async function deleteClass(id: string) {
-  await requireAdmin();
-  await prisma.class.delete({ where: { id } });
-  revalidatePath("/admin/classes");
-}

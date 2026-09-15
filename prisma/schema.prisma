@@ -206,6 +206,13 @@ model Media {
   createdAt DateTime @default(now())
 }
 
+// Stream master (Science, Arts, Commerce, etc.) -- standalone list,
+// shown alongside Classes on the public Classes page.
+model Stream {
+  id   String @id @default(cuid())
+  name String @unique
+}
+
 // Inquiries submitted through the public contact form.
 model ContactMessage {
   id      String @id @default(cuid())
