@@ -16,7 +16,8 @@ async function requireAdmin() {
 function readClassForm(formData: FormData) {
   const name = (formData.get("name") as string)?.trim();
   const teacherId = (formData.get("teacherId") as string) || null;
-  return { name, teacherId };
+  const sectionId = (formData.get("sectionId") as string) || null;
+  return { name, teacherId, sectionId };
 }
 
 export async function createClass(
@@ -24,11 +25,11 @@ export async function createClass(
   formData: FormData,
 ): Promise<ActionState> {
   await requireAdmin();
-  const { name, teacherId } = readClassForm(formData);
+  const { name, teacherId, sectionId } = readClassForm(formData);
   if (!name) return { error: "Class name is required." };
 
   try {
-    await prisma.class.create({ data: { name, teacherId } });
+    await prisma.class.create({ data: { name, teacherId, sectionId } });
   } catch (err) {
     if (
       err instanceof Prisma.PrismaClientKnownRequestError &&
@@ -49,11 +50,14 @@ export async function updateClass(
   formData: FormData,
 ): Promise<ActionState> {
   await requireAdmin();
-  const { name, teacherId } = readClassForm(formData);
+  const { name, teacherId, sectionId } = readClassForm(formData);
   if (!name) return { error: "Class name is required." };
 
   try {
-    await prisma.class.update({ where: { id }, data: { name, teacherId } });
+    await prisma.class.update({
+      where: { id },
+      data: { name, teacherId, sectionId },
+    });
   } catch (err) {
     if (
       err instanceof Prisma.PrismaClientKnownRequestError &&

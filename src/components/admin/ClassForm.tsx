@@ -12,11 +12,13 @@ export function ClassForm({
   action,
   initial,
   teachers,
+  sections,
   submitLabel,
 }: {
   action: ClassFormAction;
-  initial?: { name: string; teacherId: string | null };
+  initial?: { name: string; teacherId: string | null; sectionId: string | null };
   teachers: { id: string; name: string; designation: string }[];
+  sections: { id: string; name: string }[];
   submitLabel: string;
 }) {
   const [state, formAction, pending] = useActionState(action, {});
@@ -32,6 +34,22 @@ export function ClassForm({
           placeholder="Grade 5A"
           className="rounded border border-black/20 px-3 py-2 dark:border-white/20"
         />
+      </label>
+
+      <label className="flex flex-col gap-1 text-sm">
+        Section
+        <select
+          name="sectionId"
+          defaultValue={initial?.sectionId ?? ""}
+          className="rounded border border-black/20 px-3 py-2 dark:border-white/20"
+        >
+          <option value="">— None —</option>
+          {sections.map((s) => (
+            <option key={s.id} value={s.id}>
+              {s.name}
+            </option>
+          ))}
+        </select>
       </label>
 
       <label className="flex flex-col gap-1 text-sm">

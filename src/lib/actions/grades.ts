@@ -35,12 +35,12 @@ export async function addGrade(
 ): Promise<ActionState> {
   const staff = await requireTeacherForStudent(studentId);
 
-  const subject = (formData.get("subject") as string)?.trim();
+  const subjectId = formData.get("subjectId") as string;
   const term = (formData.get("term") as string)?.trim();
   const score = Number(formData.get("score"));
   const maxScore = Number(formData.get("maxScore"));
 
-  if (!subject) return { error: "Subject is required." };
+  if (!subjectId) return { error: "Subject is required." };
   if (!term) return { error: "Term is required." };
   if (!Number.isFinite(score) || score < 0) {
     return { error: "Score must be a non-negative number." };
@@ -55,7 +55,7 @@ export async function addGrade(
   await prisma.grade.create({
     data: {
       studentId,
-      subject,
+      subjectId,
       term,
       score,
       maxScore,

@@ -11,6 +11,7 @@ type StaffFormAction = (
 export function StaffForm({
   action,
   initial,
+  subjects,
   submitLabel,
 }: {
   action: StaffFormAction;
@@ -22,10 +23,11 @@ export function StaffForm({
     qualification: string | null;
     education: string | null;
     aadharNumber: string | null;
-    subjects: string | null;
+    subjectIds: string[];
     phone: string | null;
     address: string | null;
   };
+  subjects: { id: string; name: string }[];
   submitLabel: string;
 }) {
   const [state, formAction, pending] = useActionState(action, {});
@@ -89,15 +91,27 @@ export function StaffForm({
         />
       </label>
 
-      <label className="flex flex-col gap-1 text-sm">
-        Subjects (comma-separated, if teaching)
-        <input
-          name="subjects"
-          defaultValue={initial?.subjects ?? ""}
-          placeholder="Mathematics, Physics"
-          className="rounded border border-black/20 px-3 py-2 dark:border-white/20"
-        />
-      </label>
+      <fieldset className="flex flex-col gap-1 text-sm">
+        <legend>Subjects taught (if any)</legend>
+        <div className="flex flex-wrap gap-3">
+          {subjects.map((s) => (
+            <label key={s.id} className="flex items-center gap-1">
+              <input
+                type="checkbox"
+                name="subjectIds"
+                value={s.id}
+                defaultChecked={initial?.subjectIds.includes(s.id)}
+              />
+              {s.name}
+            </label>
+          ))}
+          {subjects.length === 0 && (
+            <span className="opacity-60">
+              No subjects defined yet — add some under Admin → Subjects.
+            </span>
+          )}
+        </div>
+      </fieldset>
 
       <label className="flex flex-col gap-1 text-sm">
         Qualification

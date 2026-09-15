@@ -8,7 +8,13 @@ type AddGradeAction = (
   formData: FormData,
 ) => Promise<ActionState>;
 
-export function GradeForm({ action }: { action: AddGradeAction }) {
+export function GradeForm({
+  action,
+  subjects,
+}: {
+  action: AddGradeAction;
+  subjects: { id: string; name: string }[];
+}) {
   const [state, formAction, pending] = useActionState(action, {});
   const formRef = useRef<HTMLFormElement>(null);
 
@@ -26,11 +32,21 @@ export function GradeForm({ action }: { action: AddGradeAction }) {
     >
       <label className="flex flex-col gap-1 text-sm">
         Subject
-        <input
-          name="subject"
+        <select
+          name="subjectId"
           required
+          defaultValue=""
           className="rounded border border-black/20 px-2 py-1 dark:border-white/20"
-        />
+        >
+          <option value="" disabled>
+            Select subject
+          </option>
+          {subjects.map((s) => (
+            <option key={s.id} value={s.id}>
+              {s.name}
+            </option>
+          ))}
+        </select>
       </label>
       <label className="flex flex-col gap-1 text-sm">
         Term

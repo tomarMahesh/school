@@ -13,11 +13,17 @@ export default async function NewClassPage() {
     name: s.user.name,
     designation: s.designation,
   }));
+  const sections = await prisma.section.findMany({ orderBy: { name: "asc" } });
 
   return (
     <div>
       <h1 className="mb-6 text-2xl font-semibold">New Class</h1>
-      <ClassForm action={createClass} teachers={teachers} submitLabel="Create Class" />
+      <ClassForm
+        action={createClass}
+        teachers={teachers}
+        sections={sections}
+        submitLabel="Create Class"
+      />
     </div>
   );
 }

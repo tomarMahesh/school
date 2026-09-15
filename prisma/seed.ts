@@ -20,12 +20,44 @@ async function seedAdmin() {
   console.log(`Created admin user: ${email} / ${PASSWORD}`);
 }
 
+async function seedMasters() {
+  const mathematics = await prisma.subject.upsert({
+    where: { name: "Mathematics" },
+    update: {},
+    create: { name: "Mathematics", code: "MATH" },
+  });
+  await prisma.subject.upsert({
+    where: { name: "Science" },
+    update: {},
+    create: { name: "Science", code: "SCI" },
+  });
+
+  const sectionA = await prisma.section.upsert({
+    where: { name: "A" },
+    update: {},
+    create: { name: "A" },
+  });
+
+  await prisma.academicYear.upsert({
+    where: { name: "2026-2027" },
+    update: {},
+    create: {
+      name: "2026-2027",
+      startDate: new Date("2026-06-01"),
+      endDate: new Date("2027-04-30"),
+      isCurrent: true,
+    },
+  });
+
+  console.log("Seeded masters: subjects, section A, academic year 2026-2027");
+  return { mathematics, sectionA };
+}
+
 async function seedStaffMember(opts: {
   email: string;
   name: string;
   role: Role;
   designation: string;
-  subjects?: string;
 }) {
   const existing = await prisma.user.findUnique({ where: { email: opts.email } });
   if (existing) {
@@ -40,21 +72,18 @@ async function seedStaffMember(opts: {
       name: opts.name,
       role: opts.role,
       passwordHash,
-      staff: {
-        create: {
-          designation: opts.designation,
-          subjects: opts.subjects,
-        },
-      },
+      staff: { create: { designation: opts.designation } },
     },
   });
   console.log(`Created ${opts.role.toLowerCase()} user: ${opts.email} / ${PASSWORD}`);
 }
 
-async function seedClassroom() {
+async function seedClassroom(mathematicsId: string, sectionAId: string) {
   let klass = await prisma.class.findUnique({ where: { name: "Grade 5A" } });
   if (!klass) {
-    klass = await prisma.class.create({ data: { name: "Grade 5A" } });
+    klass = await prisma.class.create({
+      data: { name: "Grade 5A", sectionId: sectionAId },
+    });
     console.log(`Created class: ${klass.name}`);
   }
 
@@ -73,10 +102,10 @@ async function seedClassroom() {
   });
 
   const teacherEmail = "teacher@school.local";
-  let teacherUser = await prisma.user.findUnique({ where: { email: teacherEmail } });
+  const teacherUser = await prisma.user.findUnique({ where: { email: teacherEmail } });
   if (!teacherUser) {
     const passwordHash = await bcrypt.hash(PASSWORD, 10);
-    teacherUser = await prisma.user.create({
+    await prisma.user.create({
       data: {
         email: teacherEmail,
         name: "Jane Teacher",
@@ -85,7 +114,7 @@ async function seedClassroom() {
         staff: {
           create: {
             designation: "Mathematics Teacher",
-            subjects: "Mathematics",
+            subjects: { connect: { id: mathematicsId } },
             classes: { connect: { id: klass.id } },
           },
         },
@@ -113,7 +142,8 @@ async function seedClassroom() {
 
 async function main() {
   await seedAdmin();
-  await seedClassroom();
+  const { mathematics, sectionA } = await seedMasters();
+  await seedClassroom(mathematics.id, sectionA.id);
   console.log(`Seed complete. All demo accounts use password: ${PASSWORD}`);
 }
 

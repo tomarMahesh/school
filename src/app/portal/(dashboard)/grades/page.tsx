@@ -8,7 +8,7 @@ export default async function MyGradesPage() {
 
   const student = await prisma.student.findUnique({
     where: { userId: session.user.id },
-    include: { grades: { orderBy: { createdAt: "desc" } } },
+    include: { grades: { orderBy: { createdAt: "desc" }, include: { subject: true } } },
   });
 
   return (
@@ -29,7 +29,7 @@ export default async function MyGradesPage() {
               key={grade.id}
               className="border-b border-black/5 dark:border-white/5"
             >
-              <td className="py-2">{grade.subject}</td>
+              <td className="py-2">{grade.subject.name}</td>
               <td className="py-2">{grade.term}</td>
               <td className="py-2">
                 {grade.score} / {grade.maxScore}

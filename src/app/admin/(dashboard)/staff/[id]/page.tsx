@@ -11,9 +11,11 @@ export default async function EditStaffPage({
   const { id } = await params;
   const staff = await prisma.staff.findUnique({
     where: { id },
-    include: { user: true },
+    include: { user: true, subjects: true },
   });
   if (!staff) notFound();
+
+  const subjects = await prisma.subject.findMany({ orderBy: { name: "asc" } });
 
   return (
     <div>
@@ -28,10 +30,11 @@ export default async function EditStaffPage({
           qualification: staff.qualification,
           education: staff.education,
           aadharNumber: staff.aadharNumber,
-          subjects: staff.subjects,
+          subjectIds: staff.subjects.map((s) => s.id),
           phone: staff.phone,
           address: staff.address,
         }}
+        subjects={subjects}
         submitLabel="Save Changes"
       />
     </div>

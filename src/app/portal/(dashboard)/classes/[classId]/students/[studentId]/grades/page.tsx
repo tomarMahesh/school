@@ -22,7 +22,7 @@ export default async function StudentGradesPage(
     include: {
       user: true,
       class: true,
-      grades: { orderBy: { createdAt: "desc" } },
+      grades: { orderBy: { createdAt: "desc" }, include: { subject: true } },
     },
   });
 
@@ -31,6 +31,7 @@ export default async function StudentGradesPage(
   const canEdit = student.class?.teacherId === staff?.id;
   if (role === "TEACHER" && !canEdit) notFound();
 
+  const subjects = await prisma.subject.findMany({ orderBy: { name: "asc" } });
   const action = addGrade.bind(null, studentId);
 
   return (
@@ -44,7 +45,7 @@ export default async function StudentGradesPage(
 
       {canEdit && (
         <div className="mt-6">
-          <GradeForm action={action} />
+          <GradeForm action={action} subjects={subjects} />
         </div>
       )}
 
@@ -63,7 +64,7 @@ export default async function StudentGradesPage(
               key={grade.id}
               className="border-b border-black/5 dark:border-white/5"
             >
-              <td className="py-2">{grade.subject}</td>
+              <td className="py-2">{grade.subject.name}</td>
               <td className="py-2">{grade.term}</td>
               <td className="py-2">
                 {grade.score} / {grade.maxScore}
@@ -72,7 +73,7 @@ export default async function StudentGradesPage(
                 <td className="py-2">
                   <DeleteButton
                     action={deleteGrade.bind(null, grade.id, studentId)}
-                    confirmMessage={`Delete this ${grade.subject} grade?`}
+                    confirmMessage={`Delete this ${grade.subject.name} grade?`}
                   />
                 </td>
               )}
