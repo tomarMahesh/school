@@ -2,6 +2,7 @@ import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import { SchoolLogo } from "@/components/site/SchoolLogo";
 import { NoticeMarquee } from "@/components/site/NoticeMarquee";
+import { HeroSlider } from "@/components/site/HeroSlider";
 
 const SCHOOL_NAME = "Shri Brijmohan Sharma Ismarak Inter College";
 
@@ -20,28 +21,32 @@ export default async function HomePage() {
 
   return (
     <div>
-      <section className="flex flex-col items-center justify-center gap-6 bg-gradient-to-br from-[#0f3d63] to-[#154f80] px-6 py-24 text-center text-white">
-        <SchoolLogo className="h-24 w-24" />
-        <h1 className="max-w-3xl text-3xl font-bold leading-tight sm:text-5xl">
-          {SCHOOL_NAME}
-        </h1>
-        <p className="max-w-xl text-white/80">
-          Nurturing curiosity, character, and confidence — building the
-          foundation for every student&apos;s future.
-        </p>
-        <div className="mt-2 flex flex-wrap justify-center gap-4">
-          <Link
-            href="/contact"
-            className="rounded bg-[#d4a017] px-6 py-3 text-sm font-semibold text-[#0f3d63]"
-          >
-            Apply Now
-          </Link>
-          <Link
-            href="/about"
-            className="rounded border border-white/40 px-6 py-3 text-sm font-semibold"
-          >
-            Explore School
-          </Link>
+      <section className="relative flex min-h-[560px] flex-col items-center justify-center gap-6 px-6 py-24 text-center text-white">
+        <HeroSlider />
+
+        <div className="relative z-20 flex flex-col items-center gap-6">
+          <SchoolLogo className="h-24 w-24" />
+          <h1 className="max-w-3xl text-3xl font-bold leading-tight sm:text-5xl">
+            {SCHOOL_NAME}
+          </h1>
+          <p className="max-w-xl text-white/80">
+            Nurturing curiosity, character, and confidence — building the
+            foundation for every student&apos;s future.
+          </p>
+          <div className="mt-2 flex flex-wrap justify-center gap-4">
+            <Link
+              href="/contact"
+              className="rounded bg-[#d4a017] px-6 py-3 text-sm font-semibold text-[#0f3d63]"
+            >
+              Apply Now
+            </Link>
+            <Link
+              href="/about"
+              className="rounded border border-white/40 px-6 py-3 text-sm font-semibold"
+            >
+              Explore School
+            </Link>
+          </div>
         </div>
       </section>
 
