@@ -52,6 +52,28 @@ export default async function HomePage() {
 
       <NoticeMarquee notices={noticeText} />
 
+      <section className="mx-auto grid max-w-5xl gap-10 px-6 py-16 sm:grid-cols-2 sm:items-center">
+        <div className="flex aspect-[4/3] flex-col items-center justify-center gap-3 rounded-lg bg-gradient-to-br from-[#0f3d63]/10 to-[#d4a017]/10 text-[#0f3d63]/40">
+          <svg viewBox="0 0 24 24" className="h-14 w-14" fill="currentColor">
+            <path d="M21 19V5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2Zm-11-5 2.5 3.01L16 13l4 5H4Z" />
+          </svg>
+          <span className="text-sm">School photo placeholder</span>
+        </div>
+        <div>
+          <h2 className="text-2xl font-bold text-[#0f3d63] sm:text-3xl">
+            Welcome to SBMSIC
+          </h2>
+          <p className="mt-4 opacity-80">
+            We are delighted to welcome you to {SCHOOL_NAME}. For generations,
+            our school has been a place where students discover their
+            potential, build lasting friendships, and prepare for a bright
+            future. Whether you&apos;re a prospective parent, a current
+            student, or a member of our alumni family, we invite you to
+            explore all that our school community has to offer.
+          </p>
+        </div>
+      </section>
+
       <section className="mx-auto max-w-4xl px-6 py-16">
         <h2 className="text-center text-2xl font-bold">Latest News &amp; Events</h2>
         <ul className="mt-8 flex flex-col gap-4">
