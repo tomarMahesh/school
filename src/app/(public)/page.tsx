@@ -74,6 +74,70 @@ export default async function HomePage() {
         </div>
       </section>
 
+      <section className="bg-[#f7f5ef] px-6 py-16">
+        <div className="mx-auto max-w-5xl">
+          <h2 className="text-center text-2xl font-bold text-[#0f3d63] sm:text-3xl">
+            Why Choose SBMSIC
+          </h2>
+          <p className="mx-auto mt-3 max-w-xl text-center opacity-70">
+            A well-rounded education built on strong values, dedicated
+            teachers, and a supportive learning environment.
+          </p>
+
+          <div className="mt-10 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+            {[
+              {
+                title: "Experienced Faculty",
+                desc: "Qualified, dedicated teachers committed to every student's growth.",
+                icon: "M12 2 1 8l11 6 9-4.91V17h2V8L12 2Zm0 13.6L4 11.2V16c0 2.21 3.58 4 8 4s8-1.79 8-4v-4.8l-8 4.4Z",
+              },
+              {
+                title: "Modern Infrastructure",
+                desc: "Smart classrooms and well-equipped labs built for hands-on learning.",
+                icon: "M4 21V9l8-6 8 6v12h-6v-7h-4v7H4Z",
+              },
+              {
+                title: "Safe & Secure Campus",
+                desc: "A secure, supervised environment where students can thrive.",
+                icon: "M12 2 4 5v6c0 5.25 3.4 9.74 8 11 4.6-1.26 8-5.75 8-11V5l-8-3Z",
+              },
+              {
+                title: "Strong Academic Record",
+                desc: "A consistent track record of excellent board results year after year.",
+                icon: "M5 3h14a1 1 0 0 1 1 1v16a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1Zm2 4v2h10V7H7Zm0 4v2h10v-2H7Zm0 4v2h7v-2H7Z",
+              },
+              {
+                title: "Sports & Activities",
+                desc: "A wide range of sports and extracurriculars for holistic growth.",
+                icon: "M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20Zm1 3.06A7.002 7.002 0 0 1 18.94 11H13V5.06ZM11 5.06V11H5.06A7.002 7.002 0 0 1 11 5.06ZM5.06 13H11v5.94A7.002 7.002 0 0 1 5.06 13Zm7.94 5.94V13h5.94A7.002 7.002 0 0 1 13 18.94Z",
+              },
+              {
+                title: "Individual Attention",
+                desc: "A healthy student-teacher ratio so every child is seen and supported.",
+                icon: "M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3Zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3Zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5C15 14.17 10.33 13 8 13Zm8 0c-.29 0-.62.02-.97.05C16.24 13.9 17 15.02 17 16.5V19h6v-2.5c0-2.33-4.67-3.5-7-3.5Z",
+              },
+            ].map((reason) => (
+              <div
+                key={reason.title}
+                className="rounded-lg bg-white p-6 shadow-sm"
+              >
+                <svg
+                  viewBox="0 0 24 24"
+                  className="h-9 w-9 text-[#d4a017]"
+                  fill="currentColor"
+                >
+                  <path d={reason.icon} />
+                </svg>
+                <h3 className="mt-4 font-semibold text-[#0f3d63]">
+                  {reason.title}
+                </h3>
+                <p className="mt-2 text-sm opacity-70">{reason.desc}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
       <section className="mx-auto max-w-4xl px-6 py-16">
         <h2 className="text-center text-2xl font-bold">Latest News &amp; Events</h2>
         <ul className="mt-8 flex flex-col gap-4">
