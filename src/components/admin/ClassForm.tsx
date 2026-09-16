@@ -1,6 +1,17 @@
 "use client";
 
 import { useActionState } from "react";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 type ActionState = { error?: string };
 type ClassFormAction = (
@@ -24,59 +35,70 @@ export function ClassForm({
   const [state, formAction, pending] = useActionState(action, {});
 
   return (
-    <form action={formAction} className="flex max-w-md flex-col gap-4">
-      <label className="flex flex-col gap-1 text-sm">
-        Class Name
-        <input
-          name="name"
-          defaultValue={initial?.name}
-          required
-          placeholder="Grade 5A"
-          className="rounded border border-black/20 px-3 py-2 dark:border-white/20"
-        />
-      </label>
+    <Card className="max-w-lg">
+      <CardContent>
+        <form action={formAction} className="flex flex-col gap-4">
+          <div className="flex flex-col gap-1.5">
+            <Label htmlFor="name">Class Name</Label>
+            <Input
+              id="name"
+              name="name"
+              defaultValue={initial?.name}
+              required
+              placeholder="Grade 5A"
+            />
+          </div>
 
-      <label className="flex flex-col gap-1 text-sm">
-        Section
-        <select
-          name="sectionId"
-          defaultValue={initial?.sectionId ?? ""}
-          className="rounded border border-black/20 px-3 py-2 dark:border-white/20"
-        >
-          <option value="">— None —</option>
-          {sections.map((s) => (
-            <option key={s.id} value={s.id}>
-              {s.name}
-            </option>
-          ))}
-        </select>
-      </label>
+          <div className="flex flex-col gap-1.5">
+            <Label>Section</Label>
+            <Select name="sectionId" defaultValue={initial?.sectionId ?? ""}>
+              <SelectTrigger className="w-full">
+                <SelectValue>
+                  {(value: string) =>
+                    sections.find((s) => s.id === value)?.name ?? "None"
+                  }
+                </SelectValue>
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="">None</SelectItem>
+                {sections.map((s) => (
+                  <SelectItem key={s.id} value={s.id}>
+                    {s.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
 
-      <label className="flex flex-col gap-1 text-sm">
-        Teacher
-        <select
-          name="teacherId"
-          defaultValue={initial?.teacherId ?? ""}
-          className="rounded border border-black/20 px-3 py-2 dark:border-white/20"
-        >
-          <option value="">— None —</option>
-          {teachers.map((t) => (
-            <option key={t.id} value={t.id}>
-              {t.name} ({t.designation})
-            </option>
-          ))}
-        </select>
-      </label>
+          <div className="flex flex-col gap-1.5">
+            <Label>Teacher</Label>
+            <Select name="teacherId" defaultValue={initial?.teacherId ?? ""}>
+              <SelectTrigger className="w-full">
+                <SelectValue>
+                  {(value: string) => {
+                    const t = teachers.find((t) => t.id === value);
+                    return t ? `${t.name} (${t.designation})` : "None";
+                  }}
+                </SelectValue>
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="">None</SelectItem>
+                {teachers.map((t) => (
+                  <SelectItem key={t.id} value={t.id}>
+                    {t.name} ({t.designation})
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
 
-      {state.error && <p className="text-sm text-red-600">{state.error}</p>}
+          {state.error && <p className="text-sm text-destructive">{state.error}</p>}
 
-      <button
-        type="submit"
-        disabled={pending}
-        className="mt-2 w-fit rounded bg-black px-4 py-2 text-sm text-white disabled:opacity-50 dark:bg-white dark:text-black"
-      >
-        {pending ? "Saving..." : submitLabel}
-      </button>
-    </form>
+          <Button type="submit" disabled={pending} className="mt-2 w-fit">
+            {pending ? "Saving..." : submitLabel}
+          </Button>
+        </form>
+      </CardContent>
+    </Card>
   );
 }
