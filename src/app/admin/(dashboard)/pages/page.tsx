@@ -1,7 +1,19 @@
-import Link from "next/link";
+import { Plus, Pencil } from "lucide-react";
 import { prisma } from "@/lib/prisma";
 import { deletePage } from "@/lib/actions/pages";
-import { DeleteButton } from "@/components/admin/DeleteButton";
+import { DeleteAlertButton } from "@/components/admin/DeleteAlertButton";
+import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
+import { LinkButton } from "@/components/admin/LinkButton";
+import { Badge } from "@/components/ui/badge";
+import { Card } from "@/components/ui/card";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 
 export default async function AdminPagesPage() {
   const pages = await prisma.page.findMany({
@@ -9,60 +21,71 @@ export default async function AdminPagesPage() {
   });
 
   return (
-    <div>
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-semibold">Pages (CMS)</h1>
-        <Link
-          href="/admin/pages/new"
-          className="rounded bg-black px-4 py-2 text-sm text-white dark:bg-white dark:text-black"
-        >
-          New Page
-        </Link>
-      </div>
+    <div className="flex flex-col gap-6">
+      <AdminPageHeader
+        title="Pages (CMS)"
+        description={`${pages.length} page${pages.length === 1 ? "" : "s"}`}
+        action={
+          <LinkButton href="/admin/pages/new">
+            <Plus />
+            New Page
+          </LinkButton>
+        }
+      />
 
-      <table className="mt-6 w-full max-w-3xl text-left text-sm">
-        <thead>
-          <tr className="border-b border-black/10 dark:border-white/10">
-            <th className="py-2">Title</th>
-            <th className="py-2">Slug</th>
-            <th className="py-2">Status</th>
-            <th className="py-2"></th>
-          </tr>
-        </thead>
-        <tbody>
-          {pages.map((page) => (
-            <tr
-              key={page.id}
-              className="border-b border-black/5 dark:border-white/5"
-            >
-              <td className="py-2">{page.title}</td>
-              <td className="py-2 font-mono opacity-70">/{page.slug}</td>
-              <td className="py-2">
-                {page.published ? "Published" : "Draft"}
-              </td>
-              <td className="flex gap-4 py-2">
-                <Link
-                  href={`/admin/pages/${page.id}`}
-                  className="underline"
-                >
-                  Edit
-                </Link>
-                <DeleteButton
-                  action={deletePage.bind(null, page.id)}
-                  confirmMessage={`Delete page "${page.title}"?`}
-                />
-              </td>
-            </tr>
-          ))}
-          {pages.length === 0 && (
-            <tr>
-              <td colSpan={4} className="py-6 text-center opacity-60">
-                No pages yet.
-              </td>
-            </tr>
-          )}
-        </tbody>
-      </table>
+      <Card className="p-0">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Title</TableHead>
+              <TableHead>Slug</TableHead>
+              <TableHead>Status</TableHead>
+              <TableHead className="text-right">Actions</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {pages.map((page) => (
+              <TableRow key={page.id}>
+                <TableCell className="font-medium">{page.title}</TableCell>
+                <TableCell className="font-mono text-muted-foreground">
+                  /{page.slug}
+                </TableCell>
+                <TableCell>
+                  {page.published ? (
+                    <Badge className="bg-primary/10 text-primary">Published</Badge>
+                  ) : (
+                    <Badge variant="secondary">Draft</Badge>
+                  )}
+                </TableCell>
+                <TableCell className="text-right">
+                  <div className="flex justify-end gap-1">
+                    <LinkButton
+                      href={`/admin/pages/${page.id}`}
+                      variant="ghost"
+                      size="icon"
+                      aria-label="Edit"
+                    >
+                      <Pencil className="h-4 w-4" />
+                    </LinkButton>
+                    <DeleteAlertButton
+                      action={deletePage.bind(null, page.id)}
+                      itemLabel={page.title}
+                      successMessage="Page deleted."
+                    />
+                  </div>
+                </TableCell>
+              </TableRow>
+            ))}
+            {pages.length === 0 && (
+              <TableRow>
+                <TableCell colSpan={4} className="py-10 text-center text-muted-foreground">
+                  No pages yet. Click &quot;New Page&quot; to add one.
+                </TableCell>
+              </TableRow>
+            )}
+          </TableBody>
+        </Table>
+      </Card>
     </div>
   );
 }

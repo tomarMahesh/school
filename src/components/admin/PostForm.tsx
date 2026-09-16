@@ -1,12 +1,31 @@
 "use client";
 
 import { useActionState } from "react";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 type ActionState = { error?: string };
 type PostFormAction = (
   prevState: ActionState,
   formData: FormData,
 ) => Promise<ActionState>;
+
+const CATEGORY_LABELS: Record<string, string> = {
+  NEWS: "News",
+  EVENT: "Event",
+  ANNOUNCEMENT: "Announcement",
+};
 
 export function PostForm({
   action,
@@ -26,69 +45,69 @@ export function PostForm({
   const [state, formAction, pending] = useActionState(action, {});
 
   return (
-    <form action={formAction} className="flex max-w-2xl flex-col gap-4">
-      <label className="flex flex-col gap-1 text-sm">
-        Title
-        <input
-          name="title"
-          defaultValue={initial?.title}
-          required
-          className="rounded border border-black/20 px-3 py-2 dark:border-white/20"
-        />
-      </label>
+    <Card className="max-w-2xl">
+      <CardContent>
+        <form action={formAction} className="flex flex-col gap-4">
+          <div className="flex flex-col gap-1.5">
+            <Label htmlFor="title">Title</Label>
+            <Input id="title" name="title" defaultValue={initial?.title} required />
+          </div>
 
-      <label className="flex flex-col gap-1 text-sm">
-        Slug{" "}
-        <span className="opacity-60">(leave blank to auto-generate from title)</span>
-        <input
-          name="slug"
-          defaultValue={initial?.slug}
-          placeholder="winter-concert-2026"
-          className="rounded border border-black/20 px-3 py-2 font-mono dark:border-white/20"
-        />
-      </label>
+          <div className="flex flex-col gap-1.5">
+            <Label htmlFor="slug">
+              Slug{" "}
+              <span className="font-normal text-muted-foreground">
+                (leave blank to auto-generate from title)
+              </span>
+            </Label>
+            <Input
+              id="slug"
+              name="slug"
+              defaultValue={initial?.slug}
+              placeholder="winter-concert-2026"
+              className="font-mono"
+            />
+          </div>
 
-      <label className="flex flex-col gap-1 text-sm">
-        Category
-        <select
-          name="category"
-          defaultValue={initial?.category ?? "NEWS"}
-          className="rounded border border-black/20 px-3 py-2 dark:border-white/20"
-        >
-          <option value="NEWS">News</option>
-          <option value="EVENT">Event</option>
-          <option value="ANNOUNCEMENT">Announcement</option>
-        </select>
-      </label>
+          <div className="flex flex-col gap-1.5">
+            <Label>Category</Label>
+            <Select name="category" defaultValue={initial?.category ?? "NEWS"}>
+              <SelectTrigger className="w-full">
+                <SelectValue>
+                  {(value: string) => CATEGORY_LABELS[value] ?? value}
+                </SelectValue>
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="NEWS">News</SelectItem>
+                <SelectItem value="EVENT">Event</SelectItem>
+                <SelectItem value="ANNOUNCEMENT">Announcement</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
 
-      <label className="flex flex-col gap-1 text-sm">
-        Content
-        <textarea
-          name="content"
-          defaultValue={initial?.content}
-          rows={14}
-          className="rounded border border-black/20 px-3 py-2 font-mono text-sm dark:border-white/20"
-        />
-      </label>
+          <div className="flex flex-col gap-1.5">
+            <Label htmlFor="content">Content</Label>
+            <Textarea
+              id="content"
+              name="content"
+              defaultValue={initial?.content}
+              rows={14}
+              className="font-mono text-sm"
+            />
+          </div>
 
-      <label className="flex items-center gap-2 text-sm">
-        <input
-          type="checkbox"
-          name="published"
-          defaultChecked={initial?.published}
-        />
-        Published
-      </label>
+          <label className="flex items-center gap-2 text-sm">
+            <Checkbox name="published" defaultChecked={initial?.published} />
+            Published
+          </label>
 
-      {state.error && <p className="text-sm text-red-600">{state.error}</p>}
+          {state.error && <p className="text-sm text-destructive">{state.error}</p>}
 
-      <button
-        type="submit"
-        disabled={pending}
-        className="mt-2 w-fit rounded bg-black px-4 py-2 text-sm text-white disabled:opacity-50 dark:bg-white dark:text-black"
-      >
-        {pending ? "Saving..." : submitLabel}
-      </button>
-    </form>
+          <Button type="submit" disabled={pending} className="mt-2 w-fit">
+            {pending ? "Saving..." : submitLabel}
+          </Button>
+        </form>
+      </CardContent>
+    </Card>
   );
 }
