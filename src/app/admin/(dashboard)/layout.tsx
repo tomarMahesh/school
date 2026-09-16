@@ -1,5 +1,23 @@
-import Link from "next/link";
 import { auth, signOut } from "@/lib/auth";
+import { prisma } from "@/lib/prisma";
+import { AdminSidebar } from "@/components/admin/AdminSidebar";
+import {
+  SidebarProvider,
+  SidebarInset,
+  SidebarTrigger,
+} from "@/components/ui/sidebar";
+import { Separator } from "@/components/ui/separator";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuGroup,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { LogOut } from "lucide-react";
 
 export default async function AdminLayout({
   children,
@@ -7,37 +25,65 @@ export default async function AdminLayout({
   children: React.ReactNode;
 }) {
   const session = await auth();
+  const unreadMessages = await prisma.contactMessage.count({
+    where: { read: false },
+  });
+
+  const initials = (session?.user.name ?? "A")
+    .split(" ")
+    .map((n) => n[0])
+    .slice(0, 2)
+    .join("")
+    .toUpperCase();
 
   return (
-    <div className="min-h-screen">
-      <header className="flex items-center justify-between border-b border-black/10 px-6 py-4 dark:border-white/10">
-        <nav className="flex flex-wrap gap-4 text-sm">
-          <Link href="/admin">Dashboard</Link>
-          <Link href="/admin/pages">Pages</Link>
-          <Link href="/admin/posts">News & Events</Link>
-          <Link href="/admin/classes">Classes</Link>
-          <Link href="/admin/streams">Streams</Link>
-          <Link href="/admin/students">Students</Link>
-          <Link href="/admin/staff">Staff</Link>
-          <Link href="/admin/subjects">Subjects</Link>
-          <Link href="/admin/sections">Sections</Link>
-          <Link href="/admin/academic-years">Academic Years</Link>
-          <Link href="/admin/messages">Messages</Link>
-        </nav>
-        {session && (
-          <form
-            action={async () => {
-              "use server";
-              await signOut({ redirectTo: "/admin/login" });
-            }}
-          >
-            <button type="submit" className="text-sm underline">
-              Sign out ({session.user.email})
-            </button>
-          </form>
-        )}
-      </header>
-      <main className="p-6">{children}</main>
-    </div>
+    <SidebarProvider>
+      <AdminSidebar unreadMessages={unreadMessages} />
+      <SidebarInset>
+        <header className="flex h-14 shrink-0 items-center justify-between gap-2 border-b px-4">
+          <div className="flex items-center gap-2">
+            <SidebarTrigger />
+            <Separator orientation="vertical" className="h-5" />
+            <span className="text-sm font-medium text-muted-foreground">
+              School Portal Admin
+            </span>
+          </div>
+
+          {session && (
+            <DropdownMenu>
+              <DropdownMenuTrigger className="flex items-center gap-2 rounded-md px-2 py-1 text-sm hover:bg-accent">
+                <Avatar className="h-7 w-7">
+                  <AvatarFallback className="bg-primary text-primary-foreground text-xs">
+                    {initials}
+                  </AvatarFallback>
+                </Avatar>
+                <span className="hidden sm:inline">{session.user.email}</span>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuGroup>
+                  <DropdownMenuLabel>{session.user.name}</DropdownMenuLabel>
+                </DropdownMenuGroup>
+                <DropdownMenuSeparator />
+                <form
+                  action={async () => {
+                    "use server";
+                    await signOut({ redirectTo: "/admin/login" });
+                  }}
+                >
+                  <DropdownMenuItem
+                    variant="destructive"
+                    render={<button type="submit" className="w-full" />}
+                  >
+                    <LogOut />
+                    Sign out
+                  </DropdownMenuItem>
+                </form>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          )}
+        </header>
+        <main className="flex-1 p-6">{children}</main>
+      </SidebarInset>
+    </SidebarProvider>
   );
 }
