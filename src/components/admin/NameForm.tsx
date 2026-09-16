@@ -1,6 +1,10 @@
 "use client";
 
 import { useActionState } from "react";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
 
 type ActionState = { error?: string };
 type NameFormAction = (
@@ -22,27 +26,27 @@ export function NameForm({
   const [state, formAction, pending] = useActionState(action, {});
 
   return (
-    <form action={formAction} className="flex max-w-sm flex-col gap-4">
-      <label className="flex flex-col gap-1 text-sm">
-        Name
-        <input
-          name="name"
-          defaultValue={initial?.name}
-          required
-          placeholder={placeholder}
-          className="rounded border border-black/20 px-3 py-2 dark:border-white/20"
-        />
-      </label>
+    <Card className="max-w-sm">
+      <CardContent>
+        <form action={formAction} className="flex flex-col gap-4">
+          <div className="flex flex-col gap-1.5">
+            <Label htmlFor="name">Name</Label>
+            <Input
+              id="name"
+              name="name"
+              defaultValue={initial?.name}
+              required
+              placeholder={placeholder}
+            />
+          </div>
 
-      {state.error && <p className="text-sm text-red-600">{state.error}</p>}
+          {state.error && <p className="text-sm text-destructive">{state.error}</p>}
 
-      <button
-        type="submit"
-        disabled={pending}
-        className="w-fit rounded bg-black px-4 py-2 text-sm text-white disabled:opacity-50 dark:bg-white dark:text-black"
-      >
-        {pending ? "Saving..." : submitLabel}
-      </button>
-    </form>
+          <Button type="submit" disabled={pending} className="w-fit">
+            {pending ? "Saving..." : submitLabel}
+          </Button>
+        </form>
+      </CardContent>
+    </Card>
   );
 }

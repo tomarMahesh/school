@@ -1,67 +1,74 @@
 import { prisma } from "@/lib/prisma";
 import { createSubject, deleteSubject } from "@/lib/actions/masters";
 import { InlineCreateForm } from "@/components/admin/InlineCreateForm";
-import { DeleteButton } from "@/components/admin/DeleteButton";
+import { DeleteAlertButton } from "@/components/admin/DeleteAlertButton";
+import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Card } from "@/components/ui/card";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 
 export default async function AdminSubjectsPage() {
   const subjects = await prisma.subject.findMany({ orderBy: { name: "asc" } });
 
   return (
-    <div>
-      <h1 className="text-2xl font-semibold">Subjects</h1>
+    <div className="flex flex-col gap-6">
+      <AdminPageHeader
+        title="Subjects"
+        description={`${subjects.length} subject${subjects.length === 1 ? "" : "s"}`}
+      />
 
-      <div className="mt-6">
-        <InlineCreateForm action={createSubject} submitLabel="Add Subject">
-          <label className="flex flex-col gap-1 text-sm">
-            Name
-            <input
-              name="name"
-              required
-              placeholder="Mathematics"
-              className="rounded border border-black/20 px-2 py-1 dark:border-white/20"
-            />
-          </label>
-          <label className="flex flex-col gap-1 text-sm">
-            Code (optional)
-            <input
-              name="code"
-              placeholder="MATH"
-              className="w-28 rounded border border-black/20 px-2 py-1 dark:border-white/20"
-            />
-          </label>
-        </InlineCreateForm>
-      </div>
+      <InlineCreateForm action={createSubject} submitLabel="Add Subject">
+        <div className="flex flex-col gap-1.5">
+          <Label htmlFor="name">Name</Label>
+          <Input id="name" name="name" required placeholder="Mathematics" />
+        </div>
+        <div className="flex flex-col gap-1.5">
+          <Label htmlFor="code">Code (optional)</Label>
+          <Input id="code" name="code" placeholder="MATH" className="w-28" />
+        </div>
+      </InlineCreateForm>
 
-      <table className="mt-8 w-full max-w-md text-left text-sm">
-        <thead>
-          <tr className="border-b border-black/10 dark:border-white/10">
-            <th className="py-2">Name</th>
-            <th className="py-2">Code</th>
-            <th className="py-2"></th>
-          </tr>
-        </thead>
-        <tbody>
-          {subjects.map((s) => (
-            <tr key={s.id} className="border-b border-black/5 dark:border-white/5">
-              <td className="py-2">{s.name}</td>
-              <td className="py-2 opacity-70">{s.code ?? "—"}</td>
-              <td className="py-2">
-                <DeleteButton
-                  action={deleteSubject.bind(null, s.id)}
-                  confirmMessage={`Delete subject "${s.name}"?`}
-                />
-              </td>
-            </tr>
-          ))}
-          {subjects.length === 0 && (
-            <tr>
-              <td colSpan={3} className="py-6 text-center opacity-60">
-                No subjects yet.
-              </td>
-            </tr>
-          )}
-        </tbody>
-      </table>
+      <Card className="max-w-md p-0">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Name</TableHead>
+              <TableHead>Code</TableHead>
+              <TableHead className="text-right">Actions</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {subjects.map((s) => (
+              <TableRow key={s.id}>
+                <TableCell className="font-medium">{s.name}</TableCell>
+                <TableCell className="text-muted-foreground">{s.code ?? "—"}</TableCell>
+                <TableCell className="text-right">
+                  <DeleteAlertButton
+                    action={deleteSubject.bind(null, s.id)}
+                    itemLabel={s.name}
+                    successMessage="Subject deleted."
+                  />
+                </TableCell>
+              </TableRow>
+            ))}
+            {subjects.length === 0 && (
+              <TableRow>
+                <TableCell colSpan={3} className="py-10 text-center text-muted-foreground">
+                  No subjects yet.
+                </TableCell>
+              </TableRow>
+            )}
+          </TableBody>
+        </Table>
+      </Card>
     </div>
   );
 }

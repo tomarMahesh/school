@@ -1,6 +1,8 @@
 "use client";
 
 import { useActionState } from "react";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
 
 type ActionState = { error?: string };
 type CreateAction = (
@@ -20,16 +22,18 @@ export function InlineCreateForm({
   const [state, formAction, pending] = useActionState(action, {});
 
   return (
-    <form action={formAction} className="flex flex-wrap items-end gap-3">
-      {children}
-      <button
-        type="submit"
-        disabled={pending}
-        className="rounded bg-black px-4 py-2 text-sm text-white disabled:opacity-50 dark:bg-white dark:text-black"
-      >
-        {pending ? "Saving..." : submitLabel}
-      </button>
-      {state.error && <p className="w-full text-sm text-red-600">{state.error}</p>}
-    </form>
+    <Card>
+      <CardContent>
+        <form action={formAction} className="flex flex-wrap items-end gap-3">
+          {children}
+          <Button type="submit" disabled={pending}>
+            {pending ? "Saving..." : submitLabel}
+          </Button>
+          {state.error && (
+            <p className="w-full text-sm text-destructive">{state.error}</p>
+          )}
+        </form>
+      </CardContent>
+    </Card>
   );
 }
