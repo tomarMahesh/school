@@ -1,7 +1,35 @@
-import Link from "next/link";
+import { UserPlus, Pencil } from "lucide-react";
 import { prisma } from "@/lib/prisma";
 import { deleteStaff } from "@/lib/actions/staff";
-import { DeleteButton } from "@/components/admin/DeleteButton";
+import { DeleteAlertButton } from "@/components/admin/DeleteAlertButton";
+import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
+import { LinkButton } from "@/components/admin/LinkButton";
+import { Badge } from "@/components/ui/badge";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Card } from "@/components/ui/card";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+
+function initialsOf(name: string) {
+  return name
+    .split(" ")
+    .map((n) => n[0])
+    .slice(0, 2)
+    .join("")
+    .toUpperCase();
+}
+
+const ROLE_BADGE: Record<string, string> = {
+  PRINCIPAL: "bg-purple-100 text-purple-700",
+  TEACHER: "bg-blue-100 text-blue-700",
+  STAFF: "bg-slate-100 text-slate-700",
+};
 
 export default async function AdminStaffPage() {
   const staff = await prisma.staff.findMany({
@@ -10,54 +38,80 @@ export default async function AdminStaffPage() {
   });
 
   return (
-    <div>
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-semibold">Staff</h1>
-        <Link
-          href="/admin/staff/new"
-          className="rounded bg-black px-4 py-2 text-sm text-white dark:bg-white dark:text-black"
-        >
-          Onboard Staff
-        </Link>
-      </div>
+    <div className="flex flex-col gap-6">
+      <AdminPageHeader
+        title="Staff"
+        description={`${staff.length} staff member${staff.length === 1 ? "" : "s"}`}
+        action={
+          <LinkButton href="/admin/staff/new">
+            <UserPlus />
+            Onboard Staff
+          </LinkButton>
+        }
+      />
 
-      <table className="mt-6 w-full max-w-3xl text-left text-sm">
-        <thead>
-          <tr className="border-b border-black/10 dark:border-white/10">
-            <th className="py-2">Name</th>
-            <th className="py-2">Designation</th>
-            <th className="py-2">Role</th>
-            <th className="py-2">Email</th>
-            <th className="py-2"></th>
-          </tr>
-        </thead>
-        <tbody>
-          {staff.map((member) => (
-            <tr key={member.id} className="border-b border-black/5 dark:border-white/5">
-              <td className="py-2">{member.user.name}</td>
-              <td className="py-2">{member.designation}</td>
-              <td className="py-2 opacity-70">{member.user.role}</td>
-              <td className="py-2 opacity-70">{member.user.email}</td>
-              <td className="flex gap-4 py-2">
-                <Link href={`/admin/staff/${member.id}`} className="underline">
-                  Edit
-                </Link>
-                <DeleteButton
-                  action={deleteStaff.bind(null, member.id)}
-                  confirmMessage={`Remove staff member "${member.user.name}"? This deletes their account.`}
-                />
-              </td>
-            </tr>
-          ))}
-          {staff.length === 0 && (
-            <tr>
-              <td colSpan={5} className="py-6 text-center opacity-60">
-                No staff yet.
-              </td>
-            </tr>
-          )}
-        </tbody>
-      </table>
+      <Card className="p-0">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Staff</TableHead>
+              <TableHead>Designation</TableHead>
+              <TableHead>Role</TableHead>
+              <TableHead>Email</TableHead>
+              <TableHead className="text-right">Actions</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {staff.map((member) => (
+              <TableRow key={member.id}>
+                <TableCell>
+                  <div className="flex items-center gap-3">
+                    <Avatar className="h-8 w-8">
+                      <AvatarFallback className="bg-secondary text-secondary-foreground text-xs">
+                        {initialsOf(member.user.name)}
+                      </AvatarFallback>
+                    </Avatar>
+                    <span className="font-medium">{member.user.name}</span>
+                  </div>
+                </TableCell>
+                <TableCell>{member.designation}</TableCell>
+                <TableCell>
+                  <Badge className={ROLE_BADGE[member.user.role] ?? ""}>
+                    {member.user.role}
+                  </Badge>
+                </TableCell>
+                <TableCell className="text-muted-foreground">
+                  {member.user.email}
+                </TableCell>
+                <TableCell className="text-right">
+                  <div className="flex justify-end gap-1">
+                    <LinkButton
+                      href={`/admin/staff/${member.id}`}
+                      variant="ghost"
+                      size="icon"
+                      aria-label="Edit"
+                    >
+                      <Pencil className="h-4 w-4" />
+                    </LinkButton>
+                    <DeleteAlertButton
+                      action={deleteStaff.bind(null, member.id)}
+                      itemLabel={member.user.name}
+                      successMessage="Staff member removed."
+                    />
+                  </div>
+                </TableCell>
+              </TableRow>
+            ))}
+            {staff.length === 0 && (
+              <TableRow>
+                <TableCell colSpan={5} className="py-10 text-center text-muted-foreground">
+                  No staff yet. Click &quot;Onboard Staff&quot; to add one.
+                </TableCell>
+              </TableRow>
+            )}
+          </TableBody>
+        </Table>
+      </Card>
     </div>
   );
 }
