@@ -117,6 +117,43 @@
   --sidebar-ring: #d4a017;
 }
 
+/* Admin panel gets its own EduDash-inspired palette (teal primary,
+   light airy sidebar) -- scoped to .admin-theme so the public site
+   keeps the school's navy/gold brand untouched. */
+.admin-theme {
+  --background: #f4f6f8;
+  --foreground: #1f2937;
+  --card: #ffffff;
+  --card-foreground: #1f2937;
+  --popover: #ffffff;
+  --popover-foreground: #1f2937;
+  --primary: #0d9488;
+  --primary-foreground: #ffffff;
+  --secondary: #f0fdfa;
+  --secondary-foreground: #0d9488;
+  --muted: #f1f5f9;
+  --muted-foreground: #64748b;
+  --accent: #f0fdfa;
+  --accent-foreground: #0d9488;
+  --destructive: #dc2626;
+  --border: #e5e7eb;
+  --input: #e5e7eb;
+  --ring: #0d9488;
+  --chart-1: #0d9488;
+  --chart-2: #f97316;
+  --chart-3: #a855f7;
+  --chart-4: #22c55e;
+  --chart-5: #3b82f6;
+  --sidebar: #ffffff;
+  --sidebar-foreground: #1f2937;
+  --sidebar-primary: #0d9488;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #f0fdfa;
+  --sidebar-accent-foreground: #0d9488;
+  --sidebar-border: #e5e7eb;
+  --sidebar-ring: #0d9488;
+}
+
 @layer base {
   * {
     @apply border-border outline-ring/50;

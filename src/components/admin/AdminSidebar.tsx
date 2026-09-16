@@ -14,10 +14,13 @@ import {
   CalendarRange,
   Users,
   UserCog,
+  ChevronRight,
+  LogOut,
 } from "lucide-react";
 import {
   Sidebar,
   SidebarContent,
+  SidebarFooter,
   SidebarGroup,
   SidebarGroupContent,
   SidebarGroupLabel,
@@ -27,7 +30,18 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from "@/components/ui/sidebar";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuGroup,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { SchoolLogo } from "@/components/site/SchoolLogo";
+import { signOutOfAdmin } from "@/lib/actions/auth";
 
 const NAV_GROUPS = [
   {
@@ -61,8 +75,26 @@ const NAV_GROUPS = [
   },
 ] as const;
 
-export function AdminSidebar({ unreadMessages }: { unreadMessages: number }) {
+function roleLabel(role: string) {
+  return role.charAt(0) + role.slice(1).toLowerCase();
+}
+
+export function AdminSidebar({
+  unreadMessages,
+  userName,
+  userRole,
+}: {
+  unreadMessages: number;
+  userName: string;
+  userRole: string;
+}) {
   const pathname = usePathname();
+  const initials = userName
+    .split(" ")
+    .map((n) => n[0])
+    .slice(0, 2)
+    .join("")
+    .toUpperCase();
 
   return (
     <Sidebar collapsible="icon">
@@ -91,6 +123,7 @@ export function AdminSidebar({ unreadMessages }: { unreadMessages: number }) {
                         render={<Link href={item.href} />}
                         isActive={isActive}
                         tooltip={item.label}
+                        className="data-active:bg-primary! data-active:text-primary-foreground! data-active:font-medium data-active:[&_svg]:text-primary-foreground!"
                       >
                         <item.icon />
                         <span>{item.label}</span>
@@ -106,6 +139,40 @@ export function AdminSidebar({ unreadMessages }: { unreadMessages: number }) {
           </SidebarGroup>
         ))}
       </SidebarContent>
+      <SidebarFooter>
+        <DropdownMenu>
+          <DropdownMenuTrigger className="flex w-full items-center gap-3 rounded-lg bg-sidebar-accent p-2 text-left hover:opacity-90">
+            <Avatar className="h-9 w-9">
+              <AvatarFallback className="bg-primary text-primary-foreground text-sm">
+                {initials}
+              </AvatarFallback>
+            </Avatar>
+            <div className="min-w-0 flex-1 group-data-[collapsible=icon]:hidden">
+              <p className="truncate text-sm font-medium">{userName}</p>
+              <p className="truncate text-xs text-muted-foreground">
+                {roleLabel(userRole)}
+              </p>
+            </div>
+            <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground group-data-[collapsible=icon]:hidden" />
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="start" side="top" className="w-56">
+            <DropdownMenuGroup>
+              <DropdownMenuLabel>{userName}</DropdownMenuLabel>
+            </DropdownMenuGroup>
+            <DropdownMenuSeparator />
+            <form action={signOutOfAdmin}>
+              <DropdownMenuItem
+                variant="destructive"
+                nativeButton
+                render={<button type="submit" className="w-full" />}
+              >
+                <LogOut />
+                Sign out
+              </DropdownMenuItem>
+            </form>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </SidebarFooter>
     </Sidebar>
   );
 }
