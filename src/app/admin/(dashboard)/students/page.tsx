@@ -1,7 +1,29 @@
-import Link from "next/link";
+import { UserPlus, Pencil } from "lucide-react";
 import { prisma } from "@/lib/prisma";
 import { deleteStudent } from "@/lib/actions/students";
-import { DeleteButton } from "@/components/admin/DeleteButton";
+import { DeleteAlertButton } from "@/components/admin/DeleteAlertButton";
+import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
+import { LinkButton } from "@/components/admin/LinkButton";
+import { Badge } from "@/components/ui/badge";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Card } from "@/components/ui/card";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+
+function initialsOf(name: string) {
+  return name
+    .split(" ")
+    .map((n) => n[0])
+    .slice(0, 2)
+    .join("")
+    .toUpperCase();
+}
 
 export default async function AdminStudentsPage() {
   const students = await prisma.student.findMany({
@@ -10,52 +32,80 @@ export default async function AdminStudentsPage() {
   });
 
   return (
-    <div>
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-semibold">Students</h1>
-        <Link
-          href="/admin/students/new"
-          className="rounded bg-black px-4 py-2 text-sm text-white dark:bg-white dark:text-black"
-        >
-          Admit Student
-        </Link>
-      </div>
+    <div className="flex flex-col gap-6">
+      <AdminPageHeader
+        title="Students"
+        description={`${students.length} student${students.length === 1 ? "" : "s"} enrolled`}
+        action={
+          <LinkButton href="/admin/students/new">
+            <UserPlus />
+            Admit Student
+          </LinkButton>
+        }
+      />
 
-      <table className="mt-6 w-full max-w-3xl text-left text-sm">
-        <thead>
-          <tr className="border-b border-black/10 dark:border-white/10">
-            <th className="py-2">Name</th>
-            <th className="py-2">Email</th>
-            <th className="py-2">Class</th>
-            <th className="py-2"></th>
-          </tr>
-        </thead>
-        <tbody>
-          {students.map((student) => (
-            <tr key={student.id} className="border-b border-black/5 dark:border-white/5">
-              <td className="py-2">{student.user.name}</td>
-              <td className="py-2 opacity-70">{student.user.email}</td>
-              <td className="py-2">{student.class?.name ?? "—"}</td>
-              <td className="flex gap-4 py-2">
-                <Link href={`/admin/students/${student.id}`} className="underline">
-                  Edit
-                </Link>
-                <DeleteButton
-                  action={deleteStudent.bind(null, student.id)}
-                  confirmMessage={`Remove student "${student.user.name}"? This deletes their account and all records.`}
-                />
-              </td>
-            </tr>
-          ))}
-          {students.length === 0 && (
-            <tr>
-              <td colSpan={4} className="py-6 text-center opacity-60">
-                No students yet.
-              </td>
-            </tr>
-          )}
-        </tbody>
-      </table>
+      <Card className="p-0">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Student</TableHead>
+              <TableHead>Email</TableHead>
+              <TableHead>Class</TableHead>
+              <TableHead className="text-right">Actions</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {students.map((student) => (
+              <TableRow key={student.id}>
+                <TableCell>
+                  <div className="flex items-center gap-3">
+                    <Avatar className="h-8 w-8">
+                      <AvatarFallback className="bg-secondary text-secondary-foreground text-xs">
+                        {initialsOf(student.user.name)}
+                      </AvatarFallback>
+                    </Avatar>
+                    <span className="font-medium">{student.user.name}</span>
+                  </div>
+                </TableCell>
+                <TableCell className="text-muted-foreground">
+                  {student.user.email}
+                </TableCell>
+                <TableCell>
+                  {student.class ? (
+                    <Badge variant="secondary">{student.class.name}</Badge>
+                  ) : (
+                    <span className="text-muted-foreground">Unassigned</span>
+                  )}
+                </TableCell>
+                <TableCell className="text-right">
+                  <div className="flex justify-end gap-1">
+                    <LinkButton
+                      href={`/admin/students/${student.id}`}
+                      variant="ghost"
+                      size="icon"
+                      aria-label="Edit"
+                    >
+                      <Pencil className="h-4 w-4" />
+                    </LinkButton>
+                    <DeleteAlertButton
+                      action={deleteStudent.bind(null, student.id)}
+                      itemLabel={student.user.name}
+                      successMessage="Student removed."
+                    />
+                  </div>
+                </TableCell>
+              </TableRow>
+            ))}
+            {students.length === 0 && (
+              <TableRow>
+                <TableCell colSpan={4} className="py-10 text-center text-muted-foreground">
+                  No students yet. Click &quot;Admit Student&quot; to add one.
+                </TableCell>
+              </TableRow>
+            )}
+          </TableBody>
+        </Table>
+      </Card>
     </div>
   );
 }
