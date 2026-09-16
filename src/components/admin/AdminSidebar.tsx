@@ -16,7 +16,15 @@ import {
   UserCog,
   ChevronRight,
   LogOut,
+  ClipboardCheck,
+  NotebookPen,
+  Wallet,
+  PartyPopper,
+  Award,
+  ShieldCheck,
+  Settings as SettingsIcon,
 } from "lucide-react";
+import type { PermissionKey } from "@/lib/permissions";
 import {
   Sidebar,
   SidebarContent,
@@ -43,7 +51,14 @@ import {
 import { SchoolLogo } from "@/components/site/SchoolLogo";
 import { signOutOfAdmin } from "@/lib/actions/auth";
 
-const NAV_GROUPS = [
+type NavItem = {
+  href: string;
+  label: string;
+  icon: typeof LayoutDashboard;
+  permission?: PermissionKey;
+};
+
+const NAV_GROUPS: { label: string; items: NavItem[] }[] = [
   {
     label: "Overview",
     items: [{ href: "/admin", label: "Dashboard", icon: LayoutDashboard }],
@@ -64,6 +79,18 @@ const NAV_GROUPS = [
       { href: "/admin/subjects", label: "Subjects", icon: BookOpen },
       { href: "/admin/sections", label: "Sections", icon: Layers },
       { href: "/admin/academic-years", label: "Academic Years", icon: CalendarRange },
+      {
+        href: "/admin/exams",
+        label: "Examinations",
+        icon: NotebookPen,
+        permission: "admin.exams",
+      },
+      {
+        href: "/admin/attendance",
+        label: "Attendance",
+        icon: ClipboardCheck,
+        permission: "admin.attendance",
+      },
     ],
   },
   {
@@ -73,7 +100,42 @@ const NAV_GROUPS = [
       { href: "/admin/staff", label: "Staff", icon: UserCog },
     ],
   },
-] as const;
+  {
+    label: "Operations",
+    items: [
+      {
+        href: "/admin/fees",
+        label: "Fees Collection",
+        icon: Wallet,
+        permission: "admin.fees",
+      },
+      {
+        href: "/admin/holidays",
+        label: "Holidays",
+        icon: PartyPopper,
+        permission: "admin.holidays",
+      },
+      {
+        href: "/admin/certificates",
+        label: "Certificates",
+        icon: Award,
+        permission: "admin.certificates",
+      },
+    ],
+  },
+  {
+    label: "Administration",
+    items: [
+      { href: "/admin/roles", label: "Role & Access", icon: ShieldCheck },
+      {
+        href: "/admin/settings",
+        label: "Settings",
+        icon: SettingsIcon,
+        permission: "admin.settings",
+      },
+    ],
+  },
+];
 
 function roleLabel(role: string) {
   return role.charAt(0) + role.slice(1).toLowerCase();
@@ -83,10 +145,12 @@ export function AdminSidebar({
   unreadMessages,
   userName,
   userRole,
+  grantedKeys,
 }: {
   unreadMessages: number;
   userName: string;
   userRole: string;
+  grantedKeys: string[];
 }) {
   const pathname = usePathname();
   const initials = userName
@@ -95,6 +159,15 @@ export function AdminSidebar({
     .slice(0, 2)
     .join("")
     .toUpperCase();
+
+  const canSee = (item: NavItem) =>
+    userRole === "ADMIN" ||
+    (item.permission ? grantedKeys.includes(item.permission) : false);
+
+  const visibleGroups = NAV_GROUPS.map((group) => ({
+    ...group,
+    items: group.items.filter(canSee),
+  })).filter((group) => group.items.length > 0);
 
   return (
     <Sidebar collapsible="icon">
@@ -107,7 +180,7 @@ export function AdminSidebar({
         </Link>
       </SidebarHeader>
       <SidebarContent>
-        {NAV_GROUPS.map((group) => (
+        {visibleGroups.map((group) => (
           <SidebarGroup key={group.label}>
             <SidebarGroupLabel>{group.label}</SidebarGroupLabel>
             <SidebarGroupContent>

@@ -8,12 +8,53 @@ import {
   Mail,
 } from "lucide-react";
 import { prisma } from "@/lib/prisma";
+import { auth } from "@/lib/auth";
+import { PERMISSIONS } from "@/lib/permissions";
 import { StatCard } from "@/components/admin/StatCard";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 
 export default async function AdminDashboardPage() {
+  const session = await auth();
+  const role = session?.user.role ?? "ADMIN";
+
+  if (role !== "ADMIN") {
+    const grants = await prisma.rolePermission.findMany({
+      where: { role },
+      include: { permission: true },
+    });
+    const grantedKeys = new Set(grants.map((g) => g.permission.key));
+    const sections = PERMISSIONS.filter((p) => grantedKeys.has(p.key));
+
+    return (
+      <div className="flex flex-col gap-6">
+        <div>
+          <h1 className="text-2xl font-bold">Welcome, {session?.user.name}</h1>
+          <p className="text-sm text-muted-foreground">
+            You have access to the following admin sections.
+          </p>
+        </div>
+        <div className="flex flex-wrap gap-3">
+          {sections.map((s) => (
+            <Link
+              key={s.key}
+              href={`/admin/${s.key.replace("admin.", "")}`}
+              className="rounded-lg border bg-card px-4 py-3 text-sm font-medium shadow-sm hover:shadow-md"
+            >
+              {s.label}
+            </Link>
+          ))}
+          {sections.length === 0 && (
+            <p className="text-sm text-muted-foreground">
+              No sections have been granted yet.
+            </p>
+          )}
+        </div>
+      </div>
+    );
+  }
+
   const [
     studentCount,
     staffCount,

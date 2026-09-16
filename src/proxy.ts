@@ -1,16 +1,50 @@
 import NextAuth from "next-auth";
 import { NextResponse } from "next/server";
 import { authConfig } from "@/lib/auth.config";
+import { hasPermission, hasAnyPermission, type PermissionKey } from "@/lib/permissions";
 
 const { auth } = NextAuth(authConfig);
 
-const proxy = auth((req) => {
+// Route prefixes that a granted PRINCIPAL/TEACHER/STAFF can reach.
+// Every other /admin/* route stays ADMIN-only, since those pages only
+// check requireAdmin() in their server actions, not on page load --
+// opening the route itself would let a granted-nothing staff member
+// still *view* e.g. the Students list.
+const GRANTABLE_ROUTES: [string, PermissionKey][] = [
+  ["/admin/holidays", "admin.holidays"],
+  ["/admin/settings", "admin.settings"],
+  ["/admin/attendance", "admin.attendance"],
+  ["/admin/fees", "admin.fees"],
+  ["/admin/exams", "admin.exams"],
+  ["/admin/certificates", "admin.certificates"],
+];
+
+const proxy = auth(async (req) => {
   const { pathname } = req.nextUrl;
   const role = req.auth?.user?.role;
 
   if (pathname.startsWith("/admin") && pathname !== "/admin/login") {
-    if (role !== "ADMIN") {
-      return NextResponse.redirect(new URL("/admin/login", req.url));
+    if (role === "ADMIN") {
+      // full access, fall through
+    } else if (pathname === "/admin") {
+      // Dashboard root: reachable by anyone with at least one grant,
+      // so a granted Principal/Teacher/Staff has somewhere to land
+      // after signing in -- the sidebar itself filters to their
+      // granted sections only.
+      const allowed = role ? await hasAnyPermission(role) : false;
+      if (!allowed) {
+        return NextResponse.redirect(new URL("/admin/login", req.url));
+      }
+    } else {
+      const grantable = GRANTABLE_ROUTES.find(([prefix]) =>
+        pathname.startsWith(prefix),
+      );
+      const allowed =
+        grantable && role ? await hasPermission(role, grantable[1]) : false;
+
+      if (!allowed) {
+        return NextResponse.redirect(new URL("/admin/login", req.url));
+      }
     }
   }
 

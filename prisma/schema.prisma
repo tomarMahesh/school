@@ -29,6 +29,7 @@ model User {
   posts   Post[]
   pages   Page[]
   media   Media[]
+  feePayments FeePayment[]
 
   @@index([role])
 }
@@ -53,6 +54,7 @@ model Staff {
   classes         Class[]
   attendanceTaken Attendance[] @relation("AttendanceMarkedBy")
   gradesGiven     Grade[]      @relation("GradeGivenBy")
+  examMarksGiven  ExamMark[]   @relation("ExamMarkEnteredBy")
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -64,8 +66,9 @@ model Subject {
   name String @unique
   code String? @unique
 
-  staff  Staff[]
-  grades Grade[]
+  staff        Staff[]
+  grades       Grade[]
+  examSubjects ExamSubject[]
 }
 
 model Section {
@@ -91,8 +94,10 @@ model Student {
   classId String?
   class   Class?  @relation(fields: [classId], references: [id])
 
-  attendance Attendance[]
-  grades     Grade[]
+  attendance   Attendance[]
+  grades       Grade[]
+  feePayments  FeePayment[]
+  examMarks    ExamMark[]
 
   @@index([classId])
 }
@@ -107,8 +112,10 @@ model Class {
   sectionId String?
   section   Section? @relation(fields: [sectionId], references: [id])
 
-  students   Student[]
-  attendance Attendance[]
+  students      Student[]
+  attendance    Attendance[]
+  feeStructures FeeStructure[]
+  exams         Exam[]
 }
 
 model Attendance {
@@ -223,4 +230,118 @@ model ContactMessage {
   read    Boolean @default(false)
 
   createdAt DateTime @default(now())
+}
+
+model Holiday {
+  id        String   @id @default(cuid())
+  name      String
+  date      DateTime @db.Date
+  createdAt DateTime @default(now())
+
+  @@index([date])
+}
+
+// Single-row site-wide settings (id is always "site").
+model SiteSettings {
+  id         String   @id @default("site")
+  schoolName String   @default("School Portal")
+  address    String?
+  phone      String?
+  email      String?
+  logoUrl    String?
+  updatedAt  DateTime @updatedAt
+}
+
+model FeeStructure {
+  id      String @id @default(cuid())
+  classId String
+  class   Class  @relation(fields: [classId], references: [id])
+  term    String
+  amount  Float
+
+  createdAt DateTime @default(now())
+
+  @@unique([classId, term])
+}
+
+model FeePayment {
+  id        String  @id @default(cuid())
+  studentId String
+  student   Student @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  term      String
+  amount    Float
+  method    String?
+  note      String?
+  paidAt    DateTime @default(now())
+
+  recordedById String
+  recordedBy   User   @relation(fields: [recordedById], references: [id])
+
+  @@index([studentId, term])
+}
+
+model Exam {
+  id        String    @id @default(cuid())
+  name      String
+  term      String
+  classId   String
+  class     Class     @relation(fields: [classId], references: [id])
+  examDate  DateTime? @db.Date
+  published Boolean   @default(false)
+  createdAt DateTime  @default(now())
+
+  subjects ExamSubject[]
+
+  @@index([classId, term])
+}
+
+model ExamSubject {
+  id        String  @id @default(cuid())
+  examId    String
+  exam      Exam    @relation(fields: [examId], references: [id], onDelete: Cascade)
+  subjectId String
+  subject   Subject @relation(fields: [subjectId], references: [id])
+  maxMarks  Float   @default(100)
+
+  marks ExamMark[]
+
+  @@unique([examId, subjectId])
+}
+
+model ExamMark {
+  id            String      @id @default(cuid())
+  examSubjectId String
+  examSubject   ExamSubject @relation(fields: [examSubjectId], references: [id], onDelete: Cascade)
+  studentId     String
+  student       Student     @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  marksObtained Float
+
+  enteredById String
+  enteredBy   Staff  @relation("ExamMarkEnteredBy", fields: [enteredById], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([examSubjectId, studentId])
+}
+
+// Dynamic role-based access control: which admin sections each Role
+// can reach, on top of the always-on ADMIN superuser access enforced
+// in code. Lets an admin grant e.g. PRINCIPAL access to Fees without
+// a code change.
+model Permission {
+  id    String @id @default(cuid())
+  key   String @unique
+  label String
+
+  rolePermissions RolePermission[]
+}
+
+model RolePermission {
+  id           String     @id @default(cuid())
+  role         Role
+  permissionId String
+  permission   Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+
+  @@unique([role, permissionId])
 }

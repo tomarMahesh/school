@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { PERMISSIONS } from "@/lib/permissions";
 import { AdminSidebar } from "@/components/admin/AdminSidebar";
 import {
   SidebarProvider,
@@ -17,16 +18,30 @@ export default async function AdminLayout({
   children: React.ReactNode;
 }) {
   const session = await auth();
-  const unreadMessages = await prisma.contactMessage.count({
-    where: { read: false },
-  });
+  const role = session?.user.role ?? "ADMIN";
+
+  const [unreadMessages, grants] = await Promise.all([
+    prisma.contactMessage.count({ where: { read: false } }),
+    role === "ADMIN"
+      ? Promise.resolve([])
+      : prisma.rolePermission.findMany({
+          where: { role },
+          include: { permission: true },
+        }),
+  ]);
+
+  const grantedKeys =
+    role === "ADMIN"
+      ? PERMISSIONS.map((p) => p.key)
+      : grants.map((g) => g.permission.key);
 
   return (
     <SidebarProvider className="admin-theme">
       <AdminSidebar
         unreadMessages={unreadMessages}
         userName={session?.user.name ?? "Admin"}
-        userRole={session?.user.role ?? "ADMIN"}
+        userRole={role}
+        grantedKeys={grantedKeys}
       />
       <SidebarInset>
         <header className="flex h-14 shrink-0 items-center justify-between gap-2 border-b px-4">

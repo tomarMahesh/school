@@ -3,15 +3,18 @@ import { prisma } from "@/lib/prisma";
 import { SchoolLogo } from "@/components/site/SchoolLogo";
 import { NoticeMarquee } from "@/components/site/NoticeMarquee";
 import { HeroSlider } from "@/components/site/HeroSlider";
-
-const SCHOOL_NAME = "Shri Brijmohan Sharma Ismarak Inter College";
+import { getSiteSettings } from "@/lib/settings";
 
 export default async function HomePage() {
-  const recentPosts = await prisma.post.findMany({
-    where: { published: true },
-    orderBy: { publishedAt: "desc" },
-    take: 8,
-  });
+  const [recentPosts, settings] = await Promise.all([
+    prisma.post.findMany({
+      where: { published: true },
+      orderBy: { publishedAt: "desc" },
+      take: 8,
+    }),
+    getSiteSettings(),
+  ]);
+  const SCHOOL_NAME = settings.schoolName;
   const posts = recentPosts.slice(0, 3);
 
   const noticeText =

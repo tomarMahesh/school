@@ -1,13 +1,14 @@
 import { prisma } from "@/lib/prisma";
-
-const SCHOOL_NAME = "Shri Brijmohan Sharma Ismarak Inter College";
+import { getSiteSettings } from "@/lib/settings";
 
 export default async function AboutPage() {
-  const [studentCount, staffCount, classCount] = await Promise.all([
+  const [studentCount, staffCount, classCount, settings] = await Promise.all([
     prisma.student.count(),
     prisma.staff.count(),
     prisma.class.count(),
+    getSiteSettings(),
   ]);
+  const SCHOOL_NAME = settings.schoolName;
 
   return (
     <div className="mx-auto max-w-4xl px-6 py-16">

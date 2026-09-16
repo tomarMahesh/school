@@ -1,21 +1,24 @@
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
+import { getSiteSettings } from "@/lib/settings";
 import { SiteNav } from "@/components/site/SiteNav";
 import { FloatingActions } from "@/components/site/FloatingActions";
 import { SchoolLogo } from "@/components/site/SchoolLogo";
-
-const SCHOOL_NAME = "Shri Brijmohan Sharma Ismarak Inter College";
 
 export default async function PublicLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const pages = await prisma.page.findMany({
-    where: { published: true },
-    select: { slug: true, title: true },
-    orderBy: { title: "asc" },
-  });
+  const [pages, settings] = await Promise.all([
+    prisma.page.findMany({
+      where: { published: true },
+      select: { slug: true, title: true },
+      orderBy: { title: "asc" },
+    }),
+    getSiteSettings(),
+  ]);
+  const SCHOOL_NAME = settings.schoolName;
 
   return (
     <div className="flex min-h-full flex-col bg-white text-[#0f3d63]">
