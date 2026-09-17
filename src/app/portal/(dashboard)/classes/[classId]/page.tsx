@@ -35,12 +35,20 @@ export default async function ClassDetailPage(
       )}
 
       {isOwnClass && (
-        <Link
-          href={`/portal/classes/${klass.id}/attendance`}
-          className="mt-4 inline-block rounded bg-black px-4 py-2 text-sm text-white dark:bg-white dark:text-black"
-        >
-          Take Attendance
-        </Link>
+        <div className="mt-4 flex gap-3">
+          <Link
+            href={`/portal/classes/${klass.id}/attendance`}
+            className="inline-block rounded bg-black px-4 py-2 text-sm text-white dark:bg-white dark:text-black"
+          >
+            Take Attendance
+          </Link>
+          <Link
+            href={`/portal/classes/${klass.id}/exams`}
+            className="inline-block rounded border border-black/20 px-4 py-2 text-sm dark:border-white/20"
+          >
+            Exams
+          </Link>
+        </div>
       )}
 
       <table className="mt-6 w-full max-w-2xl text-left text-sm">

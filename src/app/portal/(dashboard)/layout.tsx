@@ -30,6 +30,7 @@ export default async function PortalLayout({
             <>
               <Link href="/portal/attendance">Attendance</Link>
               <Link href="/portal/grades">Grades</Link>
+              <Link href="/portal/results">Results</Link>
             </>
           )}
         </nav>
