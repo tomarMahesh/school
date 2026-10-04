@@ -2,6 +2,7 @@ import { notFound, redirect } from "next/navigation";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { saveExamMarks } from "@/lib/actions/examMarks";
+import { PersistentForm } from "@/components/PersistentForm";
 
 export default async function EnterMarksPage(
   props: PageProps<"/portal/classes/[classId]/exams/[examId]">,
@@ -49,7 +50,7 @@ export default async function EnterMarksPage(
           first.
         </p>
       ) : (
-        <form action={action} className="mt-6">
+        <PersistentForm action={action} className="mt-6">
           <table className="w-full max-w-3xl text-left text-sm">
             <thead>
               <tr className="border-b border-black/10 dark:border-white/10">
@@ -108,7 +109,7 @@ export default async function EnterMarksPage(
               Save Marks
             </button>
           )}
-        </form>
+        </PersistentForm>
       )}
     </div>
   );

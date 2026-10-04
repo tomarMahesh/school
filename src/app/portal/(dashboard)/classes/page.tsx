@@ -2,16 +2,20 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { getCurrentAcademicYear } from "@/lib/academicYear";
 
 export default async function TeacherClassesPage() {
   const session = await auth();
   const role = session?.user.role;
   if (role !== "TEACHER" && role !== "PRINCIPAL") redirect("/portal");
 
+  const currentYear = await getCurrentAcademicYear();
+
   let classes: { id: string; name: string; studentCount: number; teacherName: string | null }[];
 
   if (role === "PRINCIPAL") {
     const all = await prisma.class.findMany({
+      where: currentYear ? { academicYearId: currentYear.id } : {},
       include: {
         teacher: { include: { user: true } },
         _count: { select: { students: true } },
@@ -28,7 +32,10 @@ export default async function TeacherClassesPage() {
     const staff = await prisma.staff.findUnique({
       where: { userId: session!.user.id },
       include: {
-        classes: { include: { _count: { select: { students: true } } } },
+        classes: {
+          where: currentYear ? { academicYearId: currentYear.id } : {},
+          include: { _count: { select: { students: true } } },
+        },
       },
     });
     classes = (staff?.classes ?? []).map((klass) => ({
@@ -43,6 +50,11 @@ export default async function TeacherClassesPage() {
     <div>
       <h1 className="text-2xl font-semibold">
         {role === "PRINCIPAL" ? "All Classes" : "My Classes"}
+        {currentYear && (
+          <span className="ml-2 text-sm font-normal opacity-60">
+            ({currentYear.name})
+          </span>
+        )}
       </h1>
       <ul className="mt-6 flex flex-col gap-3">
         {classes.map((klass) => (

@@ -2,6 +2,7 @@ import Link from "next/link";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { PERMISSIONS } from "@/lib/permissions";
+import { getSiteSettings } from "@/lib/settings";
 import { AdminSidebar } from "@/components/admin/AdminSidebar";
 import {
   SidebarProvider,
@@ -20,7 +21,7 @@ export default async function AdminLayout({
   const session = await auth();
   const role = session?.user.role ?? "ADMIN";
 
-  const [unreadMessages, grants] = await Promise.all([
+  const [unreadMessages, grants, settings] = await Promise.all([
     prisma.contactMessage.count({ where: { read: false } }),
     role === "ADMIN"
       ? Promise.resolve([])
@@ -28,6 +29,7 @@ export default async function AdminLayout({
           where: { role },
           include: { permission: true },
         }),
+    getSiteSettings(),
   ]);
 
   const grantedKeys =
@@ -42,6 +44,7 @@ export default async function AdminLayout({
         userName={session?.user.name ?? "Admin"}
         userRole={role}
         grantedKeys={grantedKeys}
+        logoUrl={settings.logoUrl}
       />
       <SidebarInset>
         <header className="flex h-14 shrink-0 items-center justify-between gap-2 border-b px-4">

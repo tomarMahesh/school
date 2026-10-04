@@ -4,8 +4,13 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { requirePermission } from "@/lib/permissions";
 import { prisma } from "@/lib/prisma";
+import { getCurrentAcademicYear } from "@/lib/academicYear";
 
 type ActionState = { error?: string };
+
+function todayIso() {
+  return new Date().toISOString().slice(0, 10);
+}
 
 export async function createExam(
   _prevState: ActionState,
@@ -21,6 +26,21 @@ export async function createExam(
   if (!name) return { error: "Name is required." };
   if (!term) return { error: "Term is required." };
   if (!classId) return { error: "Class is required." };
+  if (examDate && examDate < todayIso()) {
+    return { error: "Exam date cannot be in the past." };
+  }
+
+  // An exam always belongs to the class's own academic year -- but we
+  // only ever let admins schedule against the *current* year, so this
+  // also guards against a stale/tampered classId from an old session.
+  const currentYear = await getCurrentAcademicYear();
+  if (!currentYear) {
+    return { error: "Set a current academic year before scheduling exams." };
+  }
+  const klass = await prisma.class.findUnique({ where: { id: classId } });
+  if (!klass || klass.academicYearId !== currentYear.id) {
+    return { error: "Selected class does not belong to the current academic year." };
+  }
 
   const exam = await prisma.exam.create({
     data: {

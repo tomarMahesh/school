@@ -1,7 +1,18 @@
-// Placeholder logo -- swap this file's contents for an <img src="/logo.png" .../>
-// (or similar) once the school provides a real logo. Keeping it as one small
-// component means every place the logo appears updates automatically.
-export function SchoolLogo({ className = "" }: { className?: string }) {
+// Shows the admin-uploaded logo (Settings > School Logo) when `src` is
+// given, otherwise the built-in "SBS" placeholder. Keeping every logo
+// spot on this one component means they all update together.
+export function SchoolLogo({
+  className = "",
+  src,
+}: {
+  className?: string;
+  src?: string | null;
+}) {
+  if (src) {
+    // eslint-disable-next-line @next/next/no-img-element
+    return <img src={src} alt="School logo" className={`${className} object-contain`} />;
+  }
+
   return (
     <svg
       viewBox="0 0 48 48"

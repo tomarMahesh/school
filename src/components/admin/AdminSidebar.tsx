@@ -23,6 +23,13 @@ import {
   Award,
   ShieldCheck,
   Settings as SettingsIcon,
+  Map,
+  Landmark,
+  Hash,
+  IdCard,
+  BadgeCheck,
+  Images,
+  LayoutTemplate,
 } from "lucide-react";
 import type { PermissionKey } from "@/lib/permissions";
 import {
@@ -66,8 +73,10 @@ const NAV_GROUPS: { label: string; items: NavItem[] }[] = [
   {
     label: "Content",
     items: [
+      { href: "/admin/content", label: "Site Pages", icon: LayoutTemplate },
       { href: "/admin/pages", label: "Pages", icon: FileText },
       { href: "/admin/posts", label: "News & Events", icon: Newspaper },
+      { href: "/admin/gallery", label: "Gallery", icon: Images },
       { href: "/admin/messages", label: "Messages", icon: Mail },
     ],
   },
@@ -85,12 +94,9 @@ const NAV_GROUPS: { label: string; items: NavItem[] }[] = [
         icon: NotebookPen,
         permission: "admin.exams",
       },
-      {
-        href: "/admin/attendance",
-        label: "Attendance",
-        icon: ClipboardCheck,
-        permission: "admin.attendance",
-      },
+      // No `permission` here on purpose: attendance is admin + class-teacher
+      // only, not grantable, so only ADMIN sees this link (see canSee below).
+      { href: "/admin/attendance", label: "Attendance", icon: ClipboardCheck },
     ],
   },
   {
@@ -98,6 +104,21 @@ const NAV_GROUPS: { label: string; items: NavItem[] }[] = [
     items: [
       { href: "/admin/students", label: "Students", icon: Users },
       { href: "/admin/staff", label: "Staff", icon: UserCog },
+    ],
+  },
+  {
+    label: "Staff Masters",
+    items: [
+      { href: "/admin/portal-roles", label: "Portal Roles", icon: IdCard },
+      { href: "/admin/qualifications", label: "Qualifications", icon: BadgeCheck },
+    ],
+  },
+  {
+    label: "Address Masters",
+    items: [
+      { href: "/admin/states", label: "States", icon: Map },
+      { href: "/admin/districts", label: "Districts", icon: Landmark },
+      { href: "/admin/pincodes", label: "Pincodes", icon: Hash },
     ],
   },
   {
@@ -146,11 +167,13 @@ export function AdminSidebar({
   userName,
   userRole,
   grantedKeys,
+  logoUrl,
 }: {
   unreadMessages: number;
   userName: string;
   userRole: string;
   grantedKeys: string[];
+  logoUrl?: string | null;
 }) {
   const pathname = usePathname();
   const initials = userName
@@ -173,7 +196,7 @@ export function AdminSidebar({
     <Sidebar collapsible="icon">
       <SidebarHeader>
         <Link href="/admin" className="flex items-center gap-2 px-2 py-1">
-          <SchoolLogo className="h-8 w-8 shrink-0" />
+          <SchoolLogo className="h-8 w-8 shrink-0" src={logoUrl} />
           <span className="truncate text-sm font-semibold group-data-[collapsible=icon]:hidden">
             Admin Panel
           </span>

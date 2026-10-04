@@ -1,53 +1,45 @@
 import Link from "next/link";
-import { auth, signOut } from "@/lib/auth";
+import { auth } from "@/lib/auth";
+import { getSiteSettings } from "@/lib/settings";
+import { PortalSidebar } from "@/components/portal/PortalSidebar";
+import {
+  SidebarProvider,
+  SidebarInset,
+  SidebarTrigger,
+} from "@/components/ui/sidebar";
+import { Separator } from "@/components/ui/separator";
 
 export default async function PortalLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const session = await auth();
-  const role = session?.user.role;
+  const [session, settings] = await Promise.all([auth(), getSiteSettings()]);
+  const role = session?.user.role ?? "STUDENT";
+  const roleName = role.charAt(0) + role.slice(1).toLowerCase();
 
   return (
-    <div className="min-h-screen">
-      <header className="flex items-center justify-between border-b border-black/10 px-6 py-4 dark:border-white/10">
-        <nav className="flex items-center gap-4 text-sm">
-          <span className="font-medium">Staff &amp; Student Portal</span>
-          <Link href="/portal">Dashboard</Link>
-          {(role === "TEACHER" || role === "PRINCIPAL") && (
-            <Link href="/portal/classes">
-              {role === "PRINCIPAL" ? "All Classes" : "My Classes"}
-            </Link>
-          )}
-          {role === "PRINCIPAL" && (
-            <>
-              <Link href="/portal/staff">Staff Directory</Link>
-              <Link href="/portal/all-students">All Students</Link>
-            </>
-          )}
-          {role === "STUDENT" && (
-            <>
-              <Link href="/portal/attendance">Attendance</Link>
-              <Link href="/portal/grades">Grades</Link>
-              <Link href="/portal/results">Results</Link>
-            </>
-          )}
-        </nav>
-        {session && (
-          <form
-            action={async () => {
-              "use server";
-              await signOut({ redirectTo: "/portal/login" });
-            }}
-          >
-            <button type="submit" className="text-sm underline">
-              Sign out ({session.user.name})
-            </button>
-          </form>
-        )}
-      </header>
-      <main className="p-6">{children}</main>
-    </div>
+    <SidebarProvider className="admin-theme portal-shell">
+      <PortalSidebar
+        userName={session?.user.name ?? "User"}
+        userRole={role}
+        logoUrl={settings.logoUrl}
+      />
+      <SidebarInset>
+        <header className="flex h-14 shrink-0 items-center justify-between gap-2 border-b px-4 print:hidden">
+          <div className="flex items-center gap-2">
+            <SidebarTrigger />
+            <Separator orientation="vertical" className="h-5" />
+            <span className="text-sm font-medium text-muted-foreground">
+              {settings.schoolName} · {roleName} Portal
+            </span>
+          </div>
+          <Link href="/" className="text-sm text-muted-foreground hover:underline">
+            Visit website
+          </Link>
+        </header>
+        <main className="flex-1 p-6">{children}</main>
+      </SidebarInset>
+    </SidebarProvider>
   );
 }

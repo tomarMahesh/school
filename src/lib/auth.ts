@@ -1,8 +1,15 @@
 import NextAuth from "next-auth";
 import Credentials from "next-auth/providers/credentials";
-import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/prisma";
 import { authConfig } from "@/lib/auth.config";
+import { clientIpFromHeaders, verifyPassword } from "@/lib/loginSecurity";
+import { VERIFIED_GRACE_MS } from "@/lib/twoFactor";
+
+type AuthUser = { id: string; email: string; name: string; role: "ADMIN" | "PRINCIPAL" | "TEACHER" | "STAFF" | "STUDENT" };
+
+function toAuthUser(user: AuthUser): AuthUser {
+  return { id: user.id, email: user.email, name: user.name, role: user.role };
+}
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
   ...authConfig,
@@ -12,24 +19,49 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       credentials: {
         email: {},
         password: {},
+        challengeId: {},
       },
-      authorize: async (credentials) => {
+      // The one place a session can be created, and this endpoint is public
+      // (/api/auth/callback/credentials), so every rule is enforced here
+      // rather than trusting the login pages:
+      //  - ADMIN can never sign in with a password alone. They need a
+      //    challenge whose SMS code was verified (see loginSecurity/twoFactor).
+      //  - Password attempts are throttled (see loginSecurity).
+      authorize: async (credentials, request) => {
+        const challengeId = credentials?.challengeId as string | undefined;
+
+        if (challengeId) {
+          const challenge = await prisma.loginChallenge.findUnique({
+            where: { id: challengeId },
+            include: { user: true },
+          });
+          if (
+            !challenge ||
+            !challenge.verifiedAt ||
+            challenge.consumedAt ||
+            challenge.user.role !== "ADMIN" ||
+            Date.now() - challenge.verifiedAt.getTime() > VERIFIED_GRACE_MS
+          ) {
+            return null;
+          }
+          // Single use: only one caller can flip consumedAt from null.
+          const claimed = await prisma.loginChallenge.updateMany({
+            where: { id: challengeId, consumedAt: null },
+            data: { consumedAt: new Date() },
+          });
+          return claimed.count === 1 ? toAuthUser(challenge.user) : null;
+        }
+
         const email = credentials?.email as string | undefined;
         const password = credentials?.password as string | undefined;
         if (!email || !password) return null;
 
-        const user = await prisma.user.findUnique({ where: { email } });
-        if (!user) return null;
+        const ip = clientIpFromHeaders(request.headers);
+        const result = await verifyPassword(email, password, ip);
+        if (!result.ok) return null;
+        if (result.user.role === "ADMIN") return null;
 
-        const valid = await bcrypt.compare(password, user.passwordHash);
-        if (!valid) return null;
-
-        return {
-          id: user.id,
-          email: user.email,
-          name: user.name,
-          role: user.role,
-        };
+        return toAuthUser(result.user);
       },
     }),
   ],

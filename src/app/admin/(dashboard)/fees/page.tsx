@@ -1,5 +1,6 @@
 import { requirePermission } from "@/lib/permissions";
 import { prisma } from "@/lib/prisma";
+import { getCurrentAcademicYear } from "@/lib/academicYear";
 import { getStudentFeeStatus } from "@/lib/fees";
 import { deleteFeeStructure, deletePayment } from "@/lib/actions/fees";
 import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
@@ -36,8 +37,12 @@ export default async function AdminFeesPage(props: PageProps<"/admin/fees">) {
   await requirePermission("admin.fees");
   const searchParams = await props.searchParams;
 
+  const currentYear = await getCurrentAcademicYear();
   const [classes, structures, students, recentPayments] = await Promise.all([
-    prisma.class.findMany({ orderBy: { name: "asc" } }),
+    prisma.class.findMany({
+      where: currentYear ? { academicYearId: currentYear.id } : {},
+      orderBy: { name: "asc" },
+    }),
     prisma.feeStructure.findMany({
       include: { class: true },
       orderBy: [{ term: "asc" }, { class: { name: "asc" } }],

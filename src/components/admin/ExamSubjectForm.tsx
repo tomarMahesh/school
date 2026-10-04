@@ -11,6 +11,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { PersistentForm } from "@/components/PersistentForm";
 import { addExamSubject } from "@/lib/actions/exams";
 
 export function ExamSubjectForm({
@@ -24,7 +25,7 @@ export function ExamSubjectForm({
   const [state, formAction, pending] = useActionState(action, {});
 
   return (
-    <form action={formAction} className="flex flex-wrap items-end gap-3">
+    <PersistentForm action={formAction} className="flex flex-wrap items-end gap-3">
       <div className="flex flex-col gap-1.5">
         <Label>Subject</Label>
         <Select name="subjectId" defaultValue={subjects[0]?.id}>
@@ -57,6 +58,6 @@ export function ExamSubjectForm({
         {pending ? "Adding..." : "Add Subject"}
       </Button>
       {state.error && <p className="w-full text-sm text-destructive">{state.error}</p>}
-    </form>
+    </PersistentForm>
   );
 }

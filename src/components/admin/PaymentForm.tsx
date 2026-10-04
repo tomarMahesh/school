@@ -11,6 +11,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { PersistentForm } from "@/components/PersistentForm";
 import { recordPayment } from "@/lib/actions/fees";
 
 export function PaymentForm({
@@ -21,7 +22,7 @@ export function PaymentForm({
   const [state, formAction, pending] = useActionState(recordPayment, {});
 
   return (
-    <form action={formAction} className="flex flex-wrap items-end gap-3">
+    <PersistentForm action={formAction} className="flex flex-wrap items-end gap-3">
       <div className="flex flex-col gap-1.5">
         <Label>Student</Label>
         <Select name="studentId">
@@ -63,6 +64,6 @@ export function PaymentForm({
         {pending ? "Recording..." : "Record Payment"}
       </Button>
       {state.error && <p className="w-full text-sm text-destructive">{state.error}</p>}
-    </form>
+    </PersistentForm>
   );
 }

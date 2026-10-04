@@ -1,6 +1,7 @@
 "use client";
 
 import { useActionState, useRef, useEffect } from "react";
+import { PersistentForm } from "@/components/PersistentForm";
 
 type ActionState = { error?: string };
 type AddGradeAction = (
@@ -25,7 +26,7 @@ export function GradeForm({
   }, [state, pending]);
 
   return (
-    <form
+    <PersistentForm
       ref={formRef}
       action={formAction}
       className="flex flex-wrap items-end gap-3"
@@ -88,6 +89,6 @@ export function GradeForm({
       {state.error && (
         <p className="w-full text-sm text-red-600">{state.error}</p>
       )}
-    </form>
+    </PersistentForm>
   );
 }

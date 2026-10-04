@@ -2,6 +2,7 @@ import { requirePermission } from "@/lib/permissions";
 import { getSiteSettings } from "@/lib/settings";
 import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
 import { SettingsForm } from "@/components/admin/SettingsForm";
+import { LogoUploadForm } from "@/components/admin/LogoUploadForm";
 
 export default async function AdminSettingsPage() {
   await requirePermission("admin.settings");
@@ -19,9 +20,9 @@ export default async function AdminSettingsPage() {
           address: settings.address,
           phone: settings.phone,
           email: settings.email,
-          logoUrl: settings.logoUrl,
         }}
       />
+      <LogoUploadForm currentLogo={settings.logoUrl} />
     </div>
   );
 }

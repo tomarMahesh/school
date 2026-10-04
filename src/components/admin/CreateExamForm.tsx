@@ -12,6 +12,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { PersistentForm } from "@/components/PersistentForm";
 import { createExam } from "@/lib/actions/exams";
 
 export function CreateExamForm({
@@ -20,11 +21,12 @@ export function CreateExamForm({
   classes: { id: string; name: string }[];
 }) {
   const [state, formAction, pending] = useActionState(createExam, {});
+  const todayIso = new Date().toISOString().slice(0, 10);
 
   return (
     <Card className="max-w-lg">
       <CardContent>
-        <form action={formAction} className="flex flex-col gap-4">
+        <PersistentForm action={formAction} className="flex flex-col gap-4">
           <div className="flex flex-col gap-1.5">
             <Label htmlFor="name">Exam Name</Label>
             <Input id="name" name="name" required placeholder="Mid-Term Examination" />
@@ -52,13 +54,13 @@ export function CreateExamForm({
           </div>
           <div className="flex flex-col gap-1.5">
             <Label htmlFor="examDate">Exam Date (optional)</Label>
-            <Input id="examDate" name="examDate" type="date" />
+            <Input id="examDate" name="examDate" type="date" min={todayIso} />
           </div>
           {state.error && <p className="text-sm text-destructive">{state.error}</p>}
           <Button type="submit" disabled={pending} className="w-fit">
             {pending ? "Creating..." : "Create Exam"}
           </Button>
-        </form>
+        </PersistentForm>
       </CardContent>
     </Card>
   );

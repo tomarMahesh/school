@@ -12,6 +12,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { PersistentForm } from "@/components/PersistentForm";
 
 type ActionState = { error?: string };
 type ClassFormAction = (
@@ -24,20 +25,29 @@ export function ClassForm({
   initial,
   teachers,
   sections,
+  academicYears,
   submitLabel,
 }: {
   action: ClassFormAction;
-  initial?: { name: string; teacherId: string | null; sectionId: string | null };
+  initial?: {
+    name: string;
+    teacherId: string | null;
+    sectionId: string | null;
+    academicYearId: string;
+  };
   teachers: { id: string; name: string; designation: string }[];
   sections: { id: string; name: string }[];
+  academicYears: { id: string; name: string }[];
   submitLabel: string;
 }) {
   const [state, formAction, pending] = useActionState(action, {});
+  const defaultYear =
+    initial?.academicYearId ?? academicYears.find((y) => y)?.id;
 
   return (
     <Card className="max-w-lg">
       <CardContent>
-        <form action={formAction} className="flex flex-col gap-4">
+        <PersistentForm action={formAction} className="flex flex-col gap-4">
           <div className="flex flex-col gap-1.5">
             <Label htmlFor="name">Class Name</Label>
             <Input
@@ -47,6 +57,26 @@ export function ClassForm({
               required
               placeholder="Grade 5A"
             />
+          </div>
+
+          <div className="flex flex-col gap-1.5">
+            <Label>Academic Year</Label>
+            <Select name="academicYearId" defaultValue={defaultYear}>
+              <SelectTrigger className="w-full">
+                <SelectValue>
+                  {(value: string) =>
+                    academicYears.find((y) => y.id === value)?.name ?? "Select"
+                  }
+                </SelectValue>
+              </SelectTrigger>
+              <SelectContent>
+                {academicYears.map((y) => (
+                  <SelectItem key={y.id} value={y.id}>
+                    {y.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
 
           <div className="flex flex-col gap-1.5">
@@ -97,7 +127,7 @@ export function ClassForm({
           <Button type="submit" disabled={pending} className="mt-2 w-fit">
             {pending ? "Saving..." : submitLabel}
           </Button>
-        </form>
+        </PersistentForm>
       </CardContent>
     </Card>
   );

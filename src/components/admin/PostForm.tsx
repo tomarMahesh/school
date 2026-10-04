@@ -14,6 +14,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { PersistentForm } from "@/components/PersistentForm";
 
 type ActionState = { error?: string };
 type PostFormAction = (
@@ -47,7 +48,7 @@ export function PostForm({
   return (
     <Card className="max-w-2xl">
       <CardContent>
-        <form action={formAction} className="flex flex-col gap-4">
+        <PersistentForm action={formAction} className="flex flex-col gap-4">
           <div className="flex flex-col gap-1.5">
             <Label htmlFor="title">Title</Label>
             <Input id="title" name="title" defaultValue={initial?.title} required />
@@ -106,7 +107,7 @@ export function PostForm({
           <Button type="submit" disabled={pending} className="mt-2 w-fit">
             {pending ? "Saving..." : submitLabel}
           </Button>
-        </form>
+        </PersistentForm>
       </CardContent>
     </Card>
   );

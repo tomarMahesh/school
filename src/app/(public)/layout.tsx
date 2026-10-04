@@ -22,7 +22,7 @@ export default async function PublicLayout({
 
   return (
     <div className="flex min-h-full flex-col bg-white text-[#0f3d63]">
-      <SiteNav schoolName={SCHOOL_NAME} />
+      <SiteNav schoolName={SCHOOL_NAME} logoUrl={settings.logoUrl} />
       <FloatingActions />
 
       <main className="flex-1 pt-20">{children}</main>
@@ -31,7 +31,7 @@ export default async function PublicLayout({
         <div className="mx-auto grid max-w-5xl gap-8 sm:grid-cols-3">
           <div>
             <div className="flex items-center gap-2">
-              <SchoolLogo className="h-8 w-8" />
+              <SchoolLogo className="h-8 w-8" src={settings.logoUrl} />
               <span className="font-semibold">{SCHOOL_NAME}</span>
             </div>
             <p className="mt-3 text-sm text-white/70">

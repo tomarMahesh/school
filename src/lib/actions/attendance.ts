@@ -4,9 +4,18 @@ import { revalidatePath } from "next/cache";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 
-async function requireTeacherForClass(classId: string) {
+// Only ADMIN (full access to every class) and the class's own assigned
+// teacher may view or mark its attendance -- not Principal/Staff at
+// large, and not a Teacher who isn't that class's teacher.
+async function requireAdminOrClassTeacher(classId: string) {
   const session = await auth();
-  if (session?.user.role !== "TEACHER" && session?.user.role !== "PRINCIPAL") {
+  if (!session) throw new Error("Unauthorized");
+
+  if (session.user.role === "ADMIN") {
+    return { markedById: null as string | null };
+  }
+
+  if (session.user.role !== "TEACHER" && session.user.role !== "PRINCIPAL") {
     throw new Error("Unauthorized");
   }
 
@@ -20,7 +29,7 @@ async function requireTeacherForClass(classId: string) {
     throw new Error("Unauthorized: not your class");
   }
 
-  return staff;
+  return { markedById: staff.id };
 }
 
 const VALID_STATUSES = ["PRESENT", "ABSENT", "LATE"];
@@ -30,7 +39,7 @@ export async function markAttendance(
   date: string,
   formData: FormData,
 ) {
-  const staff = await requireTeacherForClass(classId);
+  const { markedById } = await requireAdminOrClassTeacher(classId);
 
   const students = await prisma.student.findMany({
     where: { classId },
@@ -54,15 +63,16 @@ export async function markAttendance(
           classId,
           date: parsedDate,
           status: safeStatus,
-          markedById: staff.id,
+          markedById,
         },
         update: {
           status: safeStatus,
-          markedById: staff.id,
+          markedById,
         },
       });
     }),
   );
 
   revalidatePath(`/portal/classes/${classId}/attendance`);
+  revalidatePath("/admin/attendance");
 }

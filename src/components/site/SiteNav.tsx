@@ -13,7 +13,13 @@ const LINKS = [
   { href: "/contact", label: "Contact" },
 ];
 
-export function SiteNav({ schoolName }: { schoolName: string }) {
+export function SiteNav({
+  schoolName,
+  logoUrl,
+}: {
+  schoolName: string;
+  logoUrl?: string | null;
+}) {
   const pathname = usePathname();
   const [menuOpen, setMenuOpen] = useState(false);
 
@@ -21,7 +27,7 @@ export function SiteNav({ schoolName }: { schoolName: string }) {
     <header className="fixed inset-x-0 top-0 z-50 border-b border-black/10 bg-white/90 backdrop-blur">
       <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-3 sm:px-6">
         <Link href="/" className="flex items-center gap-2">
-          <SchoolLogo className="h-10 w-10" />
+          <SchoolLogo className="h-10 w-10" src={logoUrl} />
           <span className="text-sm font-bold leading-tight text-[#0f3d63] sm:text-base">
             {schoolName}
           </span>

@@ -3,16 +3,25 @@ import { prisma } from "@/lib/prisma";
 import { SchoolLogo } from "@/components/site/SchoolLogo";
 import { NoticeMarquee } from "@/components/site/NoticeMarquee";
 import { HeroSlider } from "@/components/site/HeroSlider";
+import { StatsCounter } from "@/components/site/StatsCounter";
+import { ExpandableCard } from "@/components/site/ExpandableCard";
+import { TestimonialsCarousel } from "@/components/site/TestimonialsCarousel";
 import { getSiteSettings } from "@/lib/settings";
+import { fillSchoolName, getPageContent } from "@/lib/pageContent";
 
 export default async function HomePage() {
-  const [recentPosts, settings] = await Promise.all([
+  const [recentPosts, settings, principal, content] = await Promise.all([
     prisma.post.findMany({
       where: { published: true },
       orderBy: { publishedAt: "desc" },
       take: 8,
     }),
     getSiteSettings(),
+    prisma.staff.findFirst({
+      where: { user: { role: "PRINCIPAL" } },
+      include: { user: true },
+    }),
+    getPageContent("home"),
   ]);
   const SCHOOL_NAME = settings.schoolName;
   const posts = recentPosts.slice(0, 3);
@@ -24,18 +33,15 @@ export default async function HomePage() {
 
   return (
     <div>
-      <section className="relative flex min-h-[560px] flex-col items-center justify-center gap-6 px-6 py-24 text-center text-white">
-        <HeroSlider />
+      <section className="relative -mt-20 flex min-h-[560px] flex-col items-center justify-center gap-6 px-6 py-24 text-center text-white">
+        <HeroSlider slides={content.slides} />
 
         <div className="relative z-20 flex flex-col items-center gap-6">
-          <SchoolLogo className="h-24 w-24" />
+          <SchoolLogo className="h-24 w-24" src={settings.logoUrl} />
           <h1 className="max-w-3xl text-3xl font-bold leading-tight sm:text-5xl">
             {SCHOOL_NAME}
           </h1>
-          <p className="max-w-xl text-white/80">
-            Nurturing curiosity, character, and confidence — building the
-            foundation for every student&apos;s future.
-          </p>
+          <p className="max-w-xl text-white/80">{content.heroTagline}</p>
           <div className="mt-2 flex flex-wrap justify-center gap-4">
             <Link
               href="/contact"
@@ -53,6 +59,8 @@ export default async function HomePage() {
         </div>
       </section>
 
+      <StatsCounter stats={content.stats} />
+
       <NoticeMarquee notices={noticeText} />
 
       <section className="mx-auto grid max-w-5xl gap-10 px-6 py-16 sm:grid-cols-2 sm:items-center">
@@ -64,15 +72,10 @@ export default async function HomePage() {
         </div>
         <div>
           <h2 className="text-2xl font-bold text-[#0f3d63] sm:text-3xl">
-            Welcome to SBMSIC
+            {content.welcomeTitle}
           </h2>
           <p className="mt-4 opacity-80">
-            We are delighted to welcome you to {SCHOOL_NAME}. For generations,
-            our school has been a place where students discover their
-            potential, build lasting friendships, and prepare for a bright
-            future. Whether you&apos;re a prospective parent, a current
-            student, or a member of our alumni family, we invite you to
-            explore all that our school community has to offer.
+            {fillSchoolName(content.welcomeText, SCHOOL_NAME)}
           </p>
         </div>
       </section>
@@ -141,6 +144,48 @@ export default async function HomePage() {
         </div>
       </section>
 
+      <section className="mx-auto max-w-5xl px-6 py-16">
+        <h2 className="text-center text-2xl font-bold text-[#0f3d63] sm:text-3xl">
+          Mission, Vision &amp; Focus
+        </h2>
+        <div className="mt-10 grid gap-6 sm:grid-cols-3">
+          {content.missionVision.map((block) => (
+            <ExpandableCard
+              key={block.title}
+              title={block.title}
+              summary={block.summary}
+              details={block.details}
+            />
+          ))}
+        </div>
+      </section>
+
+      {principal && content.principalMessage && (
+        <section className="bg-[#f7f5ef] px-6 py-16">
+          <div className="mx-auto grid max-w-4xl gap-8 sm:grid-cols-[auto_1fr] sm:items-center">
+            <div className="mx-auto flex h-28 w-28 items-center justify-center rounded-full bg-gradient-to-br from-[#0f3d63]/10 to-[#d4a017]/10 text-[#0f3d63]/40 sm:mx-0">
+              <svg viewBox="0 0 24 24" className="h-12 w-12" fill="currentColor">
+                <path d="M12 12c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5Zm0 2c-3.34 0-10 1.68-10 5v3h20v-3c0-3.32-6.66-5-10-5Z" />
+              </svg>
+            </div>
+            <div className="text-center sm:text-left">
+              <h2 className="text-2xl font-bold text-[#0f3d63] sm:text-3xl">
+                A Note From Our Principal&apos;s Desk
+              </h2>
+              <p className="mt-4 whitespace-pre-line opacity-80">
+                {fillSchoolName(content.principalMessage, SCHOOL_NAME)}
+              </p>
+              <p className="mt-4 font-semibold text-[#0f3d63]">
+                {principal.user.name}
+                <span className="block text-sm font-normal opacity-60">
+                  {principal.designation}
+                </span>
+              </p>
+            </div>
+          </div>
+        </section>
+      )}
+
       <section className="mx-auto max-w-4xl px-6 py-16">
         <h2 className="text-center text-2xl font-bold">Latest News &amp; Events</h2>
         <ul className="mt-8 flex flex-col gap-4">
@@ -170,6 +215,8 @@ export default async function HomePage() {
           </div>
         )}
       </section>
+
+      <TestimonialsCarousel testimonials={content.testimonials} />
     </div>
   );
 }

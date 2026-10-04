@@ -13,17 +13,21 @@ const { auth } = NextAuth(authConfig);
 const GRANTABLE_ROUTES: [string, PermissionKey][] = [
   ["/admin/holidays", "admin.holidays"],
   ["/admin/settings", "admin.settings"],
-  ["/admin/attendance", "admin.attendance"],
   ["/admin/fees", "admin.fees"],
   ["/admin/exams", "admin.exams"],
   ["/admin/certificates", "admin.certificates"],
 ];
 
+// Attendance is deliberately NOT grantable -- only ADMIN (full access)
+// and each class's own teacher (via /portal, scoped to their class)
+// may view or mark attendance, so /admin/attendance stays hardcoded
+// ADMIN-only below rather than joining GRANTABLE_ROUTES.
+
 const proxy = auth(async (req) => {
   const { pathname } = req.nextUrl;
   const role = req.auth?.user?.role;
 
-  if (pathname.startsWith("/admin") && pathname !== "/admin/login") {
+  if (pathname.startsWith("/admin") && !pathname.startsWith("/admin/login")) {
     if (role === "ADMIN") {
       // full access, fall through
     } else if (pathname === "/admin") {

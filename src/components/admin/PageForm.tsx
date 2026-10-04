@@ -7,6 +7,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { PersistentForm } from "@/components/PersistentForm";
 
 type ActionState = { error?: string };
 type PageFormAction = (
@@ -28,7 +29,7 @@ export function PageForm({
   return (
     <Card className="max-w-2xl">
       <CardContent>
-        <form action={formAction} className="flex flex-col gap-4">
+        <PersistentForm action={formAction} className="flex flex-col gap-4">
           <div className="flex flex-col gap-1.5">
             <Label htmlFor="title">Title</Label>
             <Input id="title" name="title" defaultValue={initial?.title} required />
@@ -71,7 +72,7 @@ export function PageForm({
           <Button type="submit" disabled={pending} className="mt-2 w-fit">
             {pending ? "Saving..." : submitLabel}
           </Button>
-        </form>
+        </PersistentForm>
       </CardContent>
     </Card>
   );

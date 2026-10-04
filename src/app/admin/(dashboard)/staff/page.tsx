@@ -4,6 +4,7 @@ import { deleteStaff } from "@/lib/actions/staff";
 import { DeleteAlertButton } from "@/components/admin/DeleteAlertButton";
 import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
 import { LinkButton } from "@/components/admin/LinkButton";
+import { EmailStatusBanner } from "@/components/admin/EmailStatusBanner";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Card } from "@/components/ui/card";
@@ -31,7 +32,11 @@ const ROLE_BADGE: Record<string, string> = {
   STAFF: "bg-slate-100 text-slate-700",
 };
 
-export default async function AdminStaffPage() {
+export default async function AdminStaffPage(props: PageProps<"/admin/staff">) {
+  const searchParams = await props.searchParams;
+  const emailStatus = typeof searchParams.emailStatus === "string" ? searchParams.emailStatus : undefined;
+  const createdName = typeof searchParams.name === "string" ? searchParams.name : "";
+
   const staff = await prisma.staff.findMany({
     include: { user: true },
     orderBy: { user: { name: "asc" } },
@@ -49,6 +54,8 @@ export default async function AdminStaffPage() {
           </LinkButton>
         }
       />
+
+      <EmailStatusBanner status={emailStatus} name={createdName} />
 
       <Card className="p-0">
         <Table>

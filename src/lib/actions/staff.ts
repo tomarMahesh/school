@@ -2,14 +2,23 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+import { randomBytes } from "node:crypto";
 import bcrypt from "bcryptjs";
 import { Prisma, Role } from "@/generated/prisma/client";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { sendPasswordSetupEmail } from "@/lib/passwordSetup";
+import { encryptField, hashField } from "@/lib/fieldCrypto";
 
 type ActionState = { error?: string };
 
 const STAFF_ROLES: Role[] = ["TEACHER", "PRINCIPAL", "STAFF"];
+
+/** A random, never-stored-in-plaintext password for a brand-new account --
+ * it's unusable until the user sets their own via the emailed setup link. */
+async function unusablePasswordHash() {
+  return bcrypt.hash(randomBytes(32).toString("hex"), 10);
+}
 
 async function requireAdmin() {
   const session = await auth();
@@ -20,7 +29,6 @@ function readStaffForm(formData: FormData) {
   return {
     name: (formData.get("name") as string)?.trim(),
     email: (formData.get("email") as string)?.trim().toLowerCase(),
-    password: formData.get("password") as string,
     role: formData.get("role") as Role,
     designation: (formData.get("designation") as string)?.trim(),
     qualification: (formData.get("qualification") as string)?.trim() || null,
@@ -32,20 +40,33 @@ function readStaffForm(formData: FormData) {
   };
 }
 
-function validateStaffForm(
-  fields: ReturnType<typeof readStaffForm>,
-  { requirePassword }: { requirePassword: boolean },
-): string | null {
+// The MariaDB driver adapter reports the violated index under
+// meta.driverAdapterError rather than meta.target.
+function violatedIndex(err: Prisma.PrismaClientKnownRequestError): string {
+  const meta = err.meta as
+    | {
+        target?: string[];
+        driverAdapterError?: { cause?: { constraint?: { index?: string } } };
+      }
+    | undefined;
+  return (
+    meta?.target?.join(", ") ??
+    meta?.driverAdapterError?.cause?.constraint?.index ??
+    ""
+  ).toLowerCase();
+}
+
+function aadharColumns(aadhar: string | null) {
+  return aadhar
+    ? { aadharNumber: encryptField(aadhar), aadharHash: hashField(aadhar) }
+    : { aadharNumber: null, aadharHash: null };
+}
+
+function validateStaffForm(fields: ReturnType<typeof readStaffForm>): string | null {
   if (!fields.name) return "Name is required.";
   if (!fields.email) return "Email is required.";
   if (!STAFF_ROLES.includes(fields.role)) return "Invalid role.";
   if (!fields.designation) return "Designation is required.";
-  if (requirePassword && (!fields.password || fields.password.length < 8)) {
-    return "Password must be at least 8 characters.";
-  }
-  if (fields.password && fields.password.length > 0 && fields.password.length < 8) {
-    return "Password must be at least 8 characters.";
-  }
   if (fields.aadharNumber && !/^\d{12}$/.test(fields.aadharNumber)) {
     return "Aadhar number must be exactly 12 digits.";
   }
@@ -58,24 +79,24 @@ export async function createStaff(
 ): Promise<ActionState> {
   await requireAdmin();
   const fields = readStaffForm(formData);
-  const error = validateStaffForm(fields, { requirePassword: true });
+  const error = validateStaffForm(fields);
   if (error) return { error };
 
-  const passwordHash = await bcrypt.hash(fields.password, 10);
+  let staffUserId: string;
 
   try {
-    await prisma.user.create({
+    const user = await prisma.user.create({
       data: {
         name: fields.name,
         email: fields.email,
         role: fields.role,
-        passwordHash,
+        passwordHash: await unusablePasswordHash(),
         staff: {
           create: {
             designation: fields.designation,
             qualification: fields.qualification,
             education: fields.education,
-            aadharNumber: fields.aadharNumber,
+            ...aadharColumns(fields.aadharNumber),
             subjects: { connect: fields.subjectIds.map((id) => ({ id })) },
             phone: fields.phone,
             address: fields.address,
@@ -83,11 +104,12 @@ export async function createStaff(
         },
       },
     });
+    staffUserId = user.id;
   } catch (err) {
     if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === "P2002") {
-      const target = (err.meta?.target as string[] | undefined)?.join(", ");
+      const target = violatedIndex(err);
       return {
-        error: target?.includes("aadhar")
+        error: target.includes("aadhar")
           ? "This Aadhar number is already registered to another staff member."
           : `A user with email "${fields.email}" already exists.`,
       };
@@ -96,7 +118,20 @@ export async function createStaff(
   }
 
   revalidatePath("/admin/staff");
-  redirect("/admin/staff");
+
+  let emailStatus: "sent" | "failed" = "sent";
+  try {
+    await sendPasswordSetupEmail({
+      userId: staffUserId,
+      name: fields.name,
+      email: fields.email,
+      role: fields.role,
+    });
+  } catch {
+    emailStatus = "failed";
+  }
+
+  redirect(`/admin/staff?emailStatus=${emailStatus}&name=${encodeURIComponent(fields.name)}`);
 }
 
 export async function updateStaff(
@@ -106,7 +141,7 @@ export async function updateStaff(
 ): Promise<ActionState> {
   await requireAdmin();
   const fields = readStaffForm(formData);
-  const error = validateStaffForm(fields, { requirePassword: false });
+  const error = validateStaffForm(fields);
   if (error) return { error };
 
   const staff = await prisma.staff.findUnique({ where: { id: staffId } });
@@ -119,9 +154,6 @@ export async function updateStaff(
         name: fields.name,
         email: fields.email,
         role: fields.role,
-        ...(fields.password
-          ? { passwordHash: await bcrypt.hash(fields.password, 10) }
-          : {}),
       },
     });
     await prisma.staff.update({
@@ -130,7 +162,7 @@ export async function updateStaff(
         designation: fields.designation,
         qualification: fields.qualification,
         education: fields.education,
-        aadharNumber: fields.aadharNumber,
+        ...aadharColumns(fields.aadharNumber),
         subjects: { set: fields.subjectIds.map((id) => ({ id })) },
         phone: fields.phone,
         address: fields.address,
@@ -138,9 +170,9 @@ export async function updateStaff(
     });
   } catch (err) {
     if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === "P2002") {
-      const target = (err.meta?.target as string[] | undefined)?.join(", ");
+      const target = violatedIndex(err);
       return {
-        error: target?.includes("aadhar")
+        error: target.includes("aadhar")
           ? "This Aadhar number is already registered to another staff member."
           : `A user with email "${fields.email}" already exists.`,
       };

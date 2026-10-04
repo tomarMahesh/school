@@ -101,7 +101,7 @@ export default async function CertificateViewPage(
 
       <div className="mx-auto max-w-2xl rounded-lg border bg-white p-10 text-[#0f3d63] shadow-sm print:border-none print:shadow-none">
         <div className="flex items-center justify-center gap-3 border-b border-[#0f3d63]/20 pb-4">
-          <SchoolLogo className="h-12 w-12" />
+          <SchoolLogo className="h-12 w-12" src={settings.logoUrl} />
           <div className="text-center">
             <p className="text-lg font-bold">{settings.schoolName}</p>
             {settings.address && (

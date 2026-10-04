@@ -14,6 +14,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { PersistentForm } from "@/components/PersistentForm";
+import { ResendSetupEmailButton } from "@/components/admin/ResendSetupEmailButton";
 
 type ActionState = { error?: string };
 type StaffFormAction = (
@@ -31,10 +33,13 @@ export function StaffForm({
   action,
   initial,
   subjects,
+  portalRoles,
+  qualifications,
   submitLabel,
 }: {
   action: StaffFormAction;
   initial?: {
+    userId: string;
     name: string;
     email: string;
     role: "TEACHER" | "PRINCIPAL" | "STAFF";
@@ -47,6 +52,8 @@ export function StaffForm({
     address: string | null;
   };
   subjects: { id: string; name: string }[];
+  portalRoles: { id: string; name: string }[];
+  qualifications: { id: string; name: string }[];
   submitLabel: string;
 }) {
   const [state, formAction, pending] = useActionState(action, {});
@@ -55,7 +62,15 @@ export function StaffForm({
   return (
     <Card className="max-w-lg">
       <CardContent>
-        <form action={formAction} className="flex flex-col gap-4">
+        {isEdit && initial && (
+          <div className="mb-4 flex items-center justify-between gap-3 rounded-md border border-input bg-muted/30 p-3">
+            <p className="text-sm text-muted-foreground">
+              Staff set their own password via an emailed link.
+            </p>
+            <ResendSetupEmailButton userId={initial.userId} />
+          </div>
+        )}
+        <PersistentForm action={formAction} className="flex flex-col gap-4">
           <div className="flex flex-col gap-1.5">
             <Label htmlFor="name">Name</Label>
             <Input id="name" name="name" defaultValue={initial?.name} required />
@@ -69,19 +84,6 @@ export function StaffForm({
               type="email"
               defaultValue={initial?.email}
               required
-            />
-          </div>
-
-          <div className="flex flex-col gap-1.5">
-            <Label htmlFor="password">
-              {isEdit ? "New Password (leave blank to keep current)" : "Password"}
-            </Label>
-            <Input
-              id="password"
-              name="password"
-              type="password"
-              required={!isEdit}
-              minLength={8}
             />
           </div>
 
@@ -102,14 +104,27 @@ export function StaffForm({
           </div>
 
           <div className="flex flex-col gap-1.5">
-            <Label htmlFor="designation">Designation</Label>
-            <Input
-              id="designation"
+            <Label>Designation</Label>
+            <Select
               name="designation"
-              defaultValue={initial?.designation}
-              required
-              placeholder="Mathematics Teacher, Principal, Peon, Accountant..."
-            />
+              defaultValue={initial?.designation ?? portalRoles[0]?.name ?? ""}
+            >
+              <SelectTrigger className="w-full">
+                <SelectValue>{(value: string) => value || "Select"}</SelectValue>
+              </SelectTrigger>
+              <SelectContent>
+                {portalRoles.map((r) => (
+                  <SelectItem key={r.id} value={r.name}>
+                    {r.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            {portalRoles.length === 0 && (
+              <p className="text-xs text-muted-foreground">
+                Add a portal role first under Admin → Portal Roles.
+              </p>
+            )}
           </div>
 
           <div className="flex flex-col gap-2">
@@ -134,12 +149,20 @@ export function StaffForm({
           </div>
 
           <div className="flex flex-col gap-1.5">
-            <Label htmlFor="qualification">Qualification</Label>
-            <Input
-              id="qualification"
-              name="qualification"
-              defaultValue={initial?.qualification ?? ""}
-            />
+            <Label>Qualification</Label>
+            <Select name="qualification" defaultValue={initial?.qualification ?? ""}>
+              <SelectTrigger className="w-full">
+                <SelectValue>{(value: string) => value || "None"}</SelectValue>
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="">None</SelectItem>
+                {qualifications.map((q) => (
+                  <SelectItem key={q.id} value={q.name}>
+                    {q.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
 
           <div className="flex flex-col gap-1.5">
@@ -180,7 +203,7 @@ export function StaffForm({
           <Button type="submit" disabled={pending} className="mt-2 w-fit">
             {pending ? "Saving..." : submitLabel}
           </Button>
-        </form>
+        </PersistentForm>
       </CardContent>
     </Card>
   );

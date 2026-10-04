@@ -11,6 +11,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { PersistentForm } from "@/components/PersistentForm";
 import { setFeeStructure } from "@/lib/actions/fees";
 
 export function FeeStructureForm({
@@ -21,7 +22,7 @@ export function FeeStructureForm({
   const [state, formAction, pending] = useActionState(setFeeStructure, {});
 
   return (
-    <form action={formAction} className="flex flex-wrap items-end gap-3">
+    <PersistentForm action={formAction} className="flex flex-wrap items-end gap-3">
       <div className="flex flex-col gap-1.5">
         <Label>Class</Label>
         <Select name="classId" defaultValue={classes[0]?.id}>
@@ -51,6 +52,6 @@ export function FeeStructureForm({
         {pending ? "Saving..." : "Set Fee"}
       </Button>
       {state.error && <p className="w-full text-sm text-destructive">{state.error}</p>}
-    </form>
+    </PersistentForm>
   );
 }

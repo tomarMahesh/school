@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { PersistentForm } from "@/components/PersistentForm";
 
 type ActionState = { error?: string };
 type NameFormAction = (
@@ -28,7 +29,7 @@ export function NameForm({
   return (
     <Card className="max-w-sm">
       <CardContent>
-        <form action={formAction} className="flex flex-col gap-4">
+        <PersistentForm action={formAction} className="flex flex-col gap-4">
           <div className="flex flex-col gap-1.5">
             <Label htmlFor="name">Name</Label>
             <Input
@@ -45,7 +46,7 @@ export function NameForm({
           <Button type="submit" disabled={pending} className="w-fit">
             {pending ? "Saving..." : submitLabel}
           </Button>
-        </form>
+        </PersistentForm>
       </CardContent>
     </Card>
   );

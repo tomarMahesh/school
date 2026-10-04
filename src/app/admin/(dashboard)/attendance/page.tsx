@@ -1,38 +1,32 @@
-import { requirePermission } from "@/lib/permissions";
+import { BarChart3 } from "lucide-react";
 import { prisma } from "@/lib/prisma";
+import { markAttendance } from "@/lib/actions/attendance";
 import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
-import { Badge } from "@/components/ui/badge";
+import { LinkButton } from "@/components/admin/LinkButton";
 import { Card } from "@/components/ui/card";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
+import { PersistentForm } from "@/components/PersistentForm";
 
 function todayIso() {
   return new Date().toISOString().slice(0, 10);
 }
 
-const STATUS_BADGE: Record<string, string> = {
-  PRESENT: "bg-primary/10 text-primary",
-  ABSENT: "bg-red-100 text-red-700",
-  LATE: "bg-orange-100 text-orange-700",
-};
-
+// No requirePermission() here on purpose: attendance is not a grantable
+// permission (see proxy.ts) -- only ADMIN reaches this route at all, and
+// each class's own teacher gets the equivalent view+mark page under
+// /portal/classes/[classId]/attendance instead.
 export default async function AdminAttendancePage(
   props: PageProps<"/admin/attendance">,
 ) {
-  await requirePermission("admin.attendance");
   const searchParams = await props.searchParams;
   const date =
     typeof searchParams.date === "string" ? searchParams.date : todayIso();
   const selectedClassId =
     typeof searchParams.classId === "string" ? searchParams.classId : undefined;
 
-  const classes = await prisma.class.findMany({ orderBy: { name: "asc" } });
+  const classes = await prisma.class.findMany({
+    include: { academicYear: true },
+    orderBy: [{ academicYear: { startDate: "desc" } }, { name: "asc" }],
+  });
 
   const klass = selectedClassId
     ? await prisma.class.findUnique({
@@ -52,7 +46,13 @@ export default async function AdminAttendancePage(
     <div className="flex flex-col gap-6">
       <AdminPageHeader
         title="Attendance"
-        description="Read-only overview of attendance recorded by teachers."
+        description="View and mark attendance for any class. Only admins and each class's own teacher have access."
+        action={
+          <LinkButton href="/admin/attendance/report" variant="outline">
+            <BarChart3 />
+            Monthly / Yearly Report
+          </LinkButton>
+        }
       />
 
       <form method="get" className="flex flex-wrap items-end gap-3">
@@ -66,7 +66,7 @@ export default async function AdminAttendancePage(
             <option value="">Select a class</option>
             {classes.map((c) => (
               <option key={c.id} value={c.id}>
-                {c.name}
+                {c.name} ({c.academicYear.name})
               </option>
             ))}
           </select>
@@ -89,39 +89,45 @@ export default async function AdminAttendancePage(
       </form>
 
       {klass && (
-        <Card className="max-w-lg p-0">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Student</TableHead>
-                <TableHead>Status</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {klass.students.map((student) => {
-                const status = byStudent.get(student.id);
-                return (
-                  <TableRow key={student.id}>
-                    <TableCell className="font-medium">{student.user.name}</TableCell>
-                    <TableCell>
-                      {status ? (
-                        <Badge className={STATUS_BADGE[status] ?? ""}>{status}</Badge>
-                      ) : (
-                        <span className="text-muted-foreground">Not recorded</span>
-                      )}
-                    </TableCell>
-                  </TableRow>
-                );
-              })}
-              {klass.students.length === 0 && (
-                <TableRow>
-                  <TableCell colSpan={2} className="py-10 text-center text-muted-foreground">
-                    No students in this class.
-                  </TableCell>
-                </TableRow>
-              )}
-            </TableBody>
-          </Table>
+        <Card className="max-w-lg p-4">
+          <PersistentForm
+            action={markAttendance.bind(null, klass.id, date)}
+            className="flex flex-col gap-4"
+          >
+            {klass.students.map((student) => {
+              const current = byStudent.get(student.id) ?? "PRESENT";
+              return (
+                <div
+                  key={student.id}
+                  className="flex items-center justify-between border-b pb-2 text-sm"
+                >
+                  <span>{student.user.name}</span>
+                  <select
+                    name={`status_${student.id}`}
+                    defaultValue={current}
+                    className="rounded-md border border-input bg-background px-2 py-1 text-sm"
+                  >
+                    <option value="PRESENT">Present</option>
+                    <option value="ABSENT">Absent</option>
+                    <option value="LATE">Late</option>
+                  </select>
+                </div>
+              );
+            })}
+            {klass.students.length === 0 && (
+              <p className="text-sm text-muted-foreground">
+                No students in this class.
+              </p>
+            )}
+            {klass.students.length > 0 && (
+              <button
+                type="submit"
+                className="mt-2 w-fit rounded-md bg-primary px-4 py-1.5 text-sm font-medium text-primary-foreground"
+              >
+                Save Attendance
+              </button>
+            )}
+          </PersistentForm>
         </Card>
       )}
     </div>

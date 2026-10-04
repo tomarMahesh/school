@@ -165,3 +165,230 @@ export async function updateStream(
   revalidatePath("/admin/streams");
   redirect("/admin/streams");
 }
+
+// --- States (add/edit only, no delete) ---
+
+export async function createState(
+  _prevState: ActionState,
+  formData: FormData,
+): Promise<ActionState> {
+  await requireAdmin();
+  const name = (formData.get("name") as string)?.trim();
+  if (!name) return { error: "Name is required." };
+
+  try {
+    await prisma.state.create({ data: { name } });
+  } catch (err) {
+    const dup = duplicateError(err, "state");
+    if (dup) return dup;
+    throw err;
+  }
+
+  revalidatePath("/admin/states");
+  redirect("/admin/states");
+}
+
+export async function updateState(
+  id: string,
+  _prevState: ActionState,
+  formData: FormData,
+): Promise<ActionState> {
+  await requireAdmin();
+  const name = (formData.get("name") as string)?.trim();
+  if (!name) return { error: "Name is required." };
+
+  try {
+    await prisma.state.update({ where: { id }, data: { name } });
+  } catch (err) {
+    const dup = duplicateError(err, "state");
+    if (dup) return dup;
+    throw err;
+  }
+
+  revalidatePath("/admin/states");
+  redirect("/admin/states");
+}
+
+// --- Districts (add/edit only, no delete) ---
+
+export async function createDistrict(
+  _prevState: ActionState,
+  formData: FormData,
+): Promise<ActionState> {
+  await requireAdmin();
+  const name = (formData.get("name") as string)?.trim();
+  const stateId = formData.get("stateId") as string;
+  if (!name) return { error: "Name is required." };
+  if (!stateId) return { error: "State is required." };
+
+  try {
+    await prisma.district.create({ data: { name, stateId } });
+  } catch (err) {
+    if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === "P2002") {
+      return { error: `A district named "${name}" already exists in that state.` };
+    }
+    throw err;
+  }
+
+  revalidatePath("/admin/districts");
+  redirect("/admin/districts");
+}
+
+export async function updateDistrict(
+  id: string,
+  _prevState: ActionState,
+  formData: FormData,
+): Promise<ActionState> {
+  await requireAdmin();
+  const name = (formData.get("name") as string)?.trim();
+  const stateId = formData.get("stateId") as string;
+  if (!name) return { error: "Name is required." };
+  if (!stateId) return { error: "State is required." };
+
+  try {
+    await prisma.district.update({ where: { id }, data: { name, stateId } });
+  } catch (err) {
+    if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === "P2002") {
+      return { error: `A district named "${name}" already exists in that state.` };
+    }
+    throw err;
+  }
+
+  revalidatePath("/admin/districts");
+  redirect("/admin/districts");
+}
+
+// --- Pincodes (add/edit only, no delete) ---
+
+export async function createPincode(
+  _prevState: ActionState,
+  formData: FormData,
+): Promise<ActionState> {
+  await requireAdmin();
+  const code = (formData.get("code") as string)?.trim();
+  const districtId = formData.get("districtId") as string;
+  if (!code) return { error: "Pincode is required." };
+  if (!districtId) return { error: "District is required." };
+
+  try {
+    await prisma.pincode.create({ data: { code, districtId } });
+  } catch (err) {
+    if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === "P2002") {
+      return { error: `Pincode "${code}" already exists in that district.` };
+    }
+    throw err;
+  }
+
+  revalidatePath("/admin/pincodes");
+  redirect("/admin/pincodes");
+}
+
+export async function updatePincode(
+  id: string,
+  _prevState: ActionState,
+  formData: FormData,
+): Promise<ActionState> {
+  await requireAdmin();
+  const code = (formData.get("code") as string)?.trim();
+  const districtId = formData.get("districtId") as string;
+  if (!code) return { error: "Pincode is required." };
+  if (!districtId) return { error: "District is required." };
+
+  try {
+    await prisma.pincode.update({ where: { id }, data: { code, districtId } });
+  } catch (err) {
+    if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === "P2002") {
+      return { error: `Pincode "${code}" already exists in that district.` };
+    }
+    throw err;
+  }
+
+  revalidatePath("/admin/pincodes");
+  redirect("/admin/pincodes");
+}
+
+// --- Portal Roles / Designations (add/edit only, no delete) ---
+
+export async function createPortalRole(
+  _prevState: ActionState,
+  formData: FormData,
+): Promise<ActionState> {
+  await requireAdmin();
+  const name = (formData.get("name") as string)?.trim();
+  if (!name) return { error: "Name is required." };
+
+  try {
+    await prisma.portalRole.create({ data: { name } });
+  } catch (err) {
+    const dup = duplicateError(err, "portal role");
+    if (dup) return dup;
+    throw err;
+  }
+
+  revalidatePath("/admin/portal-roles");
+  redirect("/admin/portal-roles");
+}
+
+export async function updatePortalRole(
+  id: string,
+  _prevState: ActionState,
+  formData: FormData,
+): Promise<ActionState> {
+  await requireAdmin();
+  const name = (formData.get("name") as string)?.trim();
+  if (!name) return { error: "Name is required." };
+
+  try {
+    await prisma.portalRole.update({ where: { id }, data: { name } });
+  } catch (err) {
+    const dup = duplicateError(err, "portal role");
+    if (dup) return dup;
+    throw err;
+  }
+
+  revalidatePath("/admin/portal-roles");
+  redirect("/admin/portal-roles");
+}
+
+// --- Qualifications (add/edit only, no delete) ---
+
+export async function createQualification(
+  _prevState: ActionState,
+  formData: FormData,
+): Promise<ActionState> {
+  await requireAdmin();
+  const name = (formData.get("name") as string)?.trim();
+  if (!name) return { error: "Name is required." };
+
+  try {
+    await prisma.qualification.create({ data: { name } });
+  } catch (err) {
+    const dup = duplicateError(err, "qualification");
+    if (dup) return dup;
+    throw err;
+  }
+
+  revalidatePath("/admin/qualifications");
+  redirect("/admin/qualifications");
+}
+
+export async function updateQualification(
+  id: string,
+  _prevState: ActionState,
+  formData: FormData,
+): Promise<ActionState> {
+  await requireAdmin();
+  const name = (formData.get("name") as string)?.trim();
+  if (!name) return { error: "Name is required." };
+
+  try {
+    await prisma.qualification.update({ where: { id }, data: { name } });
+  } catch (err) {
+    const dup = duplicateError(err, "qualification");
+    if (dup) return dup;
+    throw err;
+  }
+
+  revalidatePath("/admin/qualifications");
+  redirect("/admin/qualifications");
+}

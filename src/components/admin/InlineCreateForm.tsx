@@ -3,6 +3,7 @@
 import { useActionState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { PersistentForm } from "@/components/PersistentForm";
 
 type ActionState = { error?: string };
 type CreateAction = (
@@ -24,7 +25,7 @@ export function InlineCreateForm({
   return (
     <Card>
       <CardContent>
-        <form action={formAction} className="flex flex-wrap items-end gap-3">
+        <PersistentForm action={formAction} className="flex flex-wrap items-end gap-3">
           {children}
           <Button type="submit" disabled={pending}>
             {pending ? "Saving..." : submitLabel}
@@ -32,7 +33,7 @@ export function InlineCreateForm({
           {state.error && (
             <p className="w-full text-sm text-destructive">{state.error}</p>
           )}
-        </form>
+        </PersistentForm>
       </CardContent>
     </Card>
   );

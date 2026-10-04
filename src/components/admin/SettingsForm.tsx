@@ -7,6 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { PersistentForm } from "@/components/PersistentForm";
 import { updateSiteSettings } from "@/lib/actions/settings";
 
 type Initial = {
@@ -14,7 +15,6 @@ type Initial = {
   address: string | null;
   phone: string | null;
   email: string | null;
-  logoUrl: string | null;
 };
 
 export function SettingsForm({ initial }: { initial: Initial }) {
@@ -27,7 +27,7 @@ export function SettingsForm({ initial }: { initial: Initial }) {
   return (
     <Card className="max-w-lg">
       <CardContent>
-        <form action={formAction} className="flex flex-col gap-4">
+        <PersistentForm action={formAction} className="flex flex-col gap-4">
           <div className="flex flex-col gap-1.5">
             <Label htmlFor="schoolName">School Name</Label>
             <Input
@@ -53,22 +53,12 @@ export function SettingsForm({ initial }: { initial: Initial }) {
             <Input id="email" name="email" type="email" defaultValue={initial.email ?? ""} />
           </div>
 
-          <div className="flex flex-col gap-1.5">
-            <Label htmlFor="logoUrl">
-              Logo URL{" "}
-              <span className="font-normal text-muted-foreground">
-                (optional -- leave blank to keep the placeholder logo)
-              </span>
-            </Label>
-            <Input id="logoUrl" name="logoUrl" defaultValue={initial.logoUrl ?? ""} />
-          </div>
-
           {state.error && <p className="text-sm text-destructive">{state.error}</p>}
 
           <Button type="submit" disabled={pending} className="mt-2 w-fit">
             {pending ? "Saving..." : "Save Settings"}
           </Button>
-        </form>
+        </PersistentForm>
       </CardContent>
     </Card>
   );

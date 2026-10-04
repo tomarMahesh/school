@@ -9,7 +9,6 @@ import type { Role } from "@/generated/prisma/enums";
 export const PERMISSIONS = [
   { key: "admin.holidays", label: "Manage Holidays" },
   { key: "admin.settings", label: "Manage Site Settings" },
-  { key: "admin.attendance", label: "View Attendance Overview" },
   { key: "admin.fees", label: "Manage Fees" },
   { key: "admin.exams", label: "Manage Examinations" },
   { key: "admin.certificates", label: "Issue Certificates" },

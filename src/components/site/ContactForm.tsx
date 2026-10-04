@@ -1,6 +1,7 @@
 "use client";
 
 import { useActionState } from "react";
+import { PersistentForm } from "@/components/PersistentForm";
 import { submitContactMessage } from "@/lib/actions/contact";
 
 export function ContactForm() {
@@ -15,7 +16,7 @@ export function ContactForm() {
   }
 
   return (
-    <form action={formAction} className="flex flex-col gap-4">
+    <PersistentForm action={formAction} className="flex flex-col gap-4">
       <div className="grid gap-4 sm:grid-cols-2">
         <label className="flex flex-col gap-1 text-sm text-[#0f3d63]">
           Name
@@ -59,6 +60,6 @@ export function ContactForm() {
       >
         {pending ? "Sending..." : "Send Message"}
       </button>
-    </form>
+    </PersistentForm>
   );
 }

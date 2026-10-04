@@ -2,6 +2,7 @@ import { notFound, redirect } from "next/navigation";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { markAttendance } from "@/lib/actions/attendance";
+import { PersistentForm } from "@/components/PersistentForm";
 
 function todayIso() {
   return new Date().toISOString().slice(0, 10);
@@ -63,7 +64,7 @@ export default async function TakeAttendancePage(
         </button>
       </form>
 
-      <form action={action} className="mt-6 flex max-w-md flex-col gap-4">
+      <PersistentForm action={action} className="mt-6 flex max-w-md flex-col gap-4">
         {klass.students.map((student) => {
           const current = existingByStudent.get(student.id) ?? "PRESENT";
           return (
@@ -95,7 +96,7 @@ export default async function TakeAttendancePage(
             Save Attendance
           </button>
         )}
-      </form>
+      </PersistentForm>
     </div>
   );
 }
