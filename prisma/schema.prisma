@@ -15,6 +15,12 @@ enum Role {
   STUDENT
 }
 
+enum Gender {
+  MALE
+  FEMALE
+  OTHER
+}
+
 model User {
   id           String   @id @default(cuid())
   email        String   @unique
@@ -30,14 +36,84 @@ model User {
   pages   Page[]
   media   Media[]
   feePayments FeePayment[]
+  passwordSetupTokens PasswordSetupToken[]
+  galleryImages GalleryImage[]
+  loginChallenges LoginChallenge[]
+
+  // Verified phone for SMS one-time codes. Required to sign in as ADMIN.
+  twoFactorPhone String?
 
   @@index([role])
 }
 
+// Every password check, kept to throttle brute-force guessing. `identifier`
+// is the lowercased email; password-reset requests use "reset:<email>" and
+// "reset-ip:<ip>" so they never count toward a login lockout.
+model LoginAttempt {
+  id         String   @id @default(cuid())
+  identifier String
+  ip         String?
+  success    Boolean
+  createdAt  DateTime @default(now())
+
+  @@index([identifier, createdAt])
+  @@index([ip, createdAt])
+}
+
+// Second step of an admin sign-in: the password was correct and a one-time
+// code was texted to the admin. `id` is a random secret held in an httpOnly
+// cookie; `verifiedAt` is set once the right code is entered, and
+// `consumedAt` once it has been exchanged for a real session.
+model LoginChallenge {
+  id         String    @id
+  userId     String
+  user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  otpHash    String
+  expiresAt  DateTime
+  attempts   Int       @default(0)
+  sendCount  Int       @default(1)
+  lastSentAt DateTime  @default(now())
+  verifiedAt DateTime?
+  consumedAt DateTime?
+  createdAt  DateTime  @default(now())
+
+  @@index([userId])
+}
+
+// One-time link sent by email so a newly admitted student/staff member
+// sets their own password, instead of the admin choosing it for them.
+model PasswordSetupToken {
+  id        String    @id @default(cuid())
+  token     String    @unique
+  userId    String
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  @@index([userId])
+}
+
+// Masters (add/edit only, no delete) that back the Designation and
+// Qualification dropdowns on the Staff form -- kept as plain string
+// columns on Staff (not FKs) so onboarding never breaks if a master
+// row is renamed later.
+model PortalRole {
+  id   String @id @default(cuid())
+  name String @unique
+}
+
+model Qualification {
+  id   String @id @default(cuid())
+  name String @unique
+}
+
 // Profile for any non-student employee: teachers, principal, and
-// non-teaching staff (peon, accountant, etc.). `designation` is the
-// free-text job title so the admin can add new titles without a
-// schema change; `role` on the linked User drives portal permissions.
+// non-teaching staff (peon, accountant, etc.). `designation` and
+// `qualification` are plain strings, picked from the PortalRole and
+// Qualification masters in the UI, so onboarding never breaks if a
+// master row is renamed later; `role` on the linked User drives
+// portal permissions.
 model Staff {
   id     String @id @default(cuid())
   userId String @unique
@@ -46,7 +122,10 @@ model Staff {
   designation   String
   qualification String?
   education     String?
-  aadharNumber  String? @unique
+  // Encrypted at rest (AES-256-GCM, see src/lib/fieldCrypto.ts); `aadharHash`
+  // is a keyed hash used only to enforce one-staff-per-number uniqueness.
+  aadharNumber  String?
+  aadharHash    String? @unique
   phone         String?
   address       String?
 
@@ -67,6 +146,7 @@ model Subject {
   code String? @unique
 
   staff        Staff[]
+  students     Student[]
   grades       Grade[]
   examSubjects ExamSubject[]
 }
@@ -78,12 +158,47 @@ model Section {
   classes Class[]
 }
 
+// Address masters (add/edit only, no delete): State -> District -> Pincode,
+// used on the Student admission form as a cascading picker.
+model State {
+  id   String @id @default(cuid())
+  name String @unique
+
+  districts District[]
+  students  Student[]
+}
+
+model District {
+  id      String @id @default(cuid())
+  name    String
+  stateId String
+  state   State  @relation(fields: [stateId], references: [id])
+
+  pincodes Pincode[]
+  students Student[]
+
+  @@unique([name, stateId])
+}
+
+model Pincode {
+  id         String   @id @default(cuid())
+  code       String
+  districtId String
+  district   District @relation(fields: [districtId], references: [id])
+
+  students Student[]
+
+  @@unique([code, districtId])
+}
+
 model AcademicYear {
   id        String   @id @default(cuid())
   name      String   @unique
   startDate DateTime @db.Date
   endDate   DateTime @db.Date
   isCurrent Boolean  @default(false)
+
+  classes Class[]
 }
 
 model Student {
@@ -94,17 +209,41 @@ model Student {
   classId String?
   class   Class?  @relation(fields: [classId], references: [id])
 
+  fatherName String?
+  motherName String?
+  gender     Gender?
+
+  address    String? @db.Text
+  stateId    String?
+  state      State?    @relation(fields: [stateId], references: [id])
+  districtId String?
+  district   District? @relation(fields: [districtId], references: [id])
+  pincodeId  String?
+  pincode    Pincode?  @relation(fields: [pincodeId], references: [id])
+
+  // Elective stream (Science/Arts/Commerce, etc.) -- independent of
+  // class, since a class's section is fixed but its students can still
+  // split across streams (typically senior grades).
+  streamId String?
+  stream   Stream? @relation(fields: [streamId], references: [id])
+
+  subjects Subject[]
+
   attendance   Attendance[]
   grades       Grade[]
   feePayments  FeePayment[]
   examMarks    ExamMark[]
 
   @@index([classId])
+  @@index([streamId])
+  @@index([stateId])
+  @@index([districtId])
+  @@index([pincodeId])
 }
 
 model Class {
   id   String @id @default(cuid())
-  name String @unique
+  name String
 
   teacherId String?
   teacher   Staff?  @relation(fields: [teacherId], references: [id])
@@ -112,10 +251,19 @@ model Class {
   sectionId String?
   section   Section? @relation(fields: [sectionId], references: [id])
 
+  // Every class belongs to exactly one academic session -- the same
+  // class name can recur across years as separate records (each with
+  // its own roster/attendance/exams/fees), which is what powers
+  // student promotion between years.
+  academicYearId String
+  academicYear   AcademicYear @relation(fields: [academicYearId], references: [id])
+
   students      Student[]
   attendance    Attendance[]
   feeStructures FeeStructure[]
   exams         Exam[]
+
+  @@unique([name, academicYearId])
 }
 
 model Attendance {
@@ -129,8 +277,9 @@ model Attendance {
   classId String
   class   Class  @relation(fields: [classId], references: [id])
 
-  markedById String
-  markedBy   Staff  @relation("AttendanceMarkedBy", fields: [markedById], references: [id])
+  // Null when an admin marked it directly (admins have no Staff profile).
+  markedById String?
+  markedBy   Staff?  @relation("AttendanceMarkedBy", fields: [markedById], references: [id])
 
   createdAt DateTime @default(now())
 
@@ -213,11 +362,30 @@ model Media {
   createdAt DateTime @default(now())
 }
 
+// Photos shown on the public Gallery page. `url` points at the already
+// admin-cropped image under public/uploads/gallery -- cropping happens
+// client-side before upload, so there is nothing left to process server-side.
+model GalleryImage {
+  id      String  @id @default(cuid())
+  url     String
+  caption String?
+  order   Int     @default(0)
+
+  uploadedById String
+  uploadedBy   User   @relation(fields: [uploadedById], references: [id])
+
+  createdAt DateTime @default(now())
+
+  @@index([order])
+}
+
 // Stream master (Science, Arts, Commerce, etc.) -- standalone list,
 // shown alongside Classes on the public Classes page.
 model Stream {
   id   String @id @default(cuid())
   name String @unique
+
+  students Student[]
 }
 
 // Inquiries submitted through the public contact form.
@@ -242,6 +410,15 @@ model Holiday {
 }
 
 // Single-row site-wide settings (id is always "site").
+// Editable copy/images for the fixed public pages (home, about, contact).
+// `data` is JSON text kept as LongText; missing fields fall back to the
+// defaults in src/lib/pageContent.ts, so a row only stores what was edited.
+model PageContent {
+  key       String   @id
+  data      String   @db.LongText
+  updatedAt DateTime @updatedAt
+}
+
 model SiteSettings {
   id         String   @id @default("site")
   schoolName String   @default("School Portal")

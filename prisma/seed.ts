@@ -38,7 +38,7 @@ async function seedMasters() {
     create: { name: "A" },
   });
 
-  await prisma.academicYear.upsert({
+  const academicYear = await prisma.academicYear.upsert({
     where: { name: "2026-2027" },
     update: {},
     create: {
@@ -50,7 +50,7 @@ async function seedMasters() {
   });
 
   console.log("Seeded masters: subjects, section A, academic year 2026-2027");
-  return { mathematics, sectionA };
+  return { mathematics, sectionA, academicYear };
 }
 
 async function seedStaffMember(opts: {
@@ -78,11 +78,13 @@ async function seedStaffMember(opts: {
   console.log(`Created ${opts.role.toLowerCase()} user: ${opts.email} / ${PASSWORD}`);
 }
 
-async function seedClassroom(mathematicsId: string, sectionAId: string) {
-  let klass = await prisma.class.findUnique({ where: { name: "Grade 5A" } });
+async function seedClassroom(mathematicsId: string, sectionAId: string, academicYearId: string) {
+  let klass = await prisma.class.findUnique({
+    where: { name_academicYearId: { name: "Grade 5A", academicYearId } },
+  });
   if (!klass) {
     klass = await prisma.class.create({
-      data: { name: "Grade 5A", sectionId: sectionAId },
+      data: { name: "Grade 5A", sectionId: sectionAId, academicYearId },
     });
     console.log(`Created class: ${klass.name}`);
   }
@@ -142,8 +144,8 @@ async function seedClassroom(mathematicsId: string, sectionAId: string) {
 
 async function main() {
   await seedAdmin();
-  const { mathematics, sectionA } = await seedMasters();
-  await seedClassroom(mathematics.id, sectionA.id);
+  const { mathematics, sectionA, academicYear } = await seedMasters();
+  await seedClassroom(mathematics.id, sectionA.id, academicYear.id);
   console.log(`Seed complete. All demo accounts use password: ${PASSWORD}`);
 }
 
