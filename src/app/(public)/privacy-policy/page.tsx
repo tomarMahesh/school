@@ -1,4 +1,5 @@
 import { getSiteSettings } from "@/lib/settings";
+import { twoFactorEnabled } from "@/lib/twoFactorConfig";
 
 export const metadata = {
   title: "Privacy Policy",
@@ -35,6 +36,8 @@ function List({ items }: { items: string[] }) {
 export default async function PrivacyPolicyPage() {
   const settings = await getSiteSettings();
   const school = settings.schoolName;
+  // The policy must only describe protections that are actually switched on.
+  const twoFactor = twoFactorEnabled();
 
   return (
     <article className="mx-auto max-w-3xl px-6 py-16">
@@ -67,8 +70,9 @@ export default async function PrivacyPolicyPage() {
         </p>
         <p>
           <strong>Sign-in details.</strong> Your email address and a password, which we keep only in
-          scrambled (hashed) form so nobody, including school staff, can read it. For
-          administrators we also keep a mobile number to send sign-in codes by SMS.
+          scrambled (hashed) form so nobody, including school staff, can read it.
+          {twoFactor &&
+            " For administrators we also keep a mobile number to send sign-in codes by SMS."}
         </p>
         <p>
           <strong>Photographs.</strong> The gallery may show photographs taken at school events.
@@ -124,7 +128,7 @@ export default async function PrivacyPolicyPage() {
           items={[
             "The website is served over an encrypted (HTTPS) connection.",
             "Passwords are stored hashed, and strong passwords are required.",
-            "Administrator sign-in needs a password and a one-time SMS code.",
+            ...(twoFactor ? ["Administrator sign-in needs a password and a one-time SMS code."] : []),
             "Repeated wrong passwords temporarily lock an account.",
             "Aadhaar numbers are encrypted in the database.",
             "Access to records depends on a person's role, and changes made by staff are logged.",

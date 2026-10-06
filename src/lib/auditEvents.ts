@@ -6,6 +6,7 @@ import { errorFields, logger } from "@/lib/logger";
 export async function recordAdminSignIn(
   user: { id: string; name: string | null; email: string | null; role: string },
   ip: string | null,
+  label = "Signed in with password and SMS code",
 ) {
   try {
     await prisma.auditLog.create({
@@ -16,7 +17,7 @@ export async function recordAdminSignIn(
         actorRole: user.role,
         action: "SIGN_IN",
         entity: "Session",
-        label: "Signed in with password and SMS code",
+        label,
         ip,
       },
     });

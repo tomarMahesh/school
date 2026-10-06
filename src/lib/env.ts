@@ -1,4 +1,5 @@
 import { logger } from "@/lib/logger";
+import { twoFactorEnabled, twoFactorSettingRecognized } from "@/lib/twoFactorConfig";
 
 // Checked once when the production server starts. Missing core secrets stop
 // the server with a clear message (instead of failing later in odd ways);
@@ -24,9 +25,18 @@ export function validateEnv() {
   if (!env.SMTP_HOST || !env.SMTP_USER || !env.SMTP_PASS) {
     warnings.push("SMTP is not configured; password setup and reset emails cannot be sent.");
   }
-  const sms = (env.SMS_PROVIDER ?? "console").toLowerCase();
-  if (sms === "console") {
-    warnings.push("SMS_PROVIDER is 'console'; admin sign-in codes cannot be sent in production.");
+  if (!twoFactorSettingRecognized()) {
+    warnings.push(`TWO_FACTOR_AUTH="${env.TWO_FACTOR_AUTH}" is not recognised, so two-factor stays ON. Use true or false.`);
+  }
+  if (!twoFactorEnabled()) {
+    warnings.push(
+      "TWO_FACTOR_AUTH=false: administrators can sign in with a password ALONE. Turn it back on as soon as SMS is working.",
+    );
+  } else {
+    const sms = (env.SMS_PROVIDER ?? "console").toLowerCase();
+    if (sms === "console") {
+      warnings.push("SMS_PROVIDER is 'console'; admin sign-in codes cannot be sent in production.");
+    }
   }
 
   for (const message of warnings) logger.warn("config_warning", { message });

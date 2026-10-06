@@ -6,7 +6,9 @@ One small Linux server runs everything: the website, the MySQL database and auto
 ## 1. Before you start
 - A **domain** you own.
 - A **2 GB RAM** Linux server (Ubuntu 24.04), ideally in Mumbai or Bangalore. 1 GB is too small.
-- **SMS for admin sign-in codes** must work BEFORE the first admin login (see "SMS" below).
+- **SMS for admin sign-in codes** must work before admins can sign in (see "SMS" below) -- or
+  set `TWO_FACTOR_AUTH=false` in `.env` to start with password-only admin sign-in, and turn it
+  back on once SMS works.
 - A Gmail App Password (or other SMTP login) for password emails.
 
 ## 2. Point the domain at the server
@@ -45,8 +47,9 @@ certificate is issued on first visit (takes a few seconds).
 ```bash
 docker compose exec app npx tsx scripts/create-admin.ts you@example.com "Your Name" 98XXXXXXXX
 ```
-Open the link it prints and choose a strong password. Then sign in at `/admin/login`; a code
-is texted to that phone. (Use this instead of the demo seed -- the seed uses a known password.)
+Open the link it prints and choose a strong password. Then sign in at `/admin/login`; with
+`TWO_FACTOR_AUTH=true` a code is texted to that phone (with `false` the phone can be left out
+and sign-in is password only). (Use this instead of the demo seed -- the seed uses a known password.)
 
 ## 7. Backups (do this on day one)
 ```bash
@@ -63,7 +66,14 @@ Restore the database: `gunzip -c backups/db_X.sql.gz | docker compose exec -T db
 cd school && git pull && docker compose up -d --build
 ```
 
-## SMS for admin codes
+## SMS for admin codes (and the TWO_FACTOR_AUTH switch)
+`TWO_FACTOR_AUTH=false` in `.env` turns the SMS step off for admins; **admin accounts are then
+protected by their password alone**, so use it only until SMS works. To turn it back on: set it to
+`true` (or delete the line), give every admin a phone with
+`docker compose exec app npx tsx scripts/set-admin-phone.ts admin@email 98XXXXXXXX`, and run
+`docker compose up -d` to restart. The server logs a warning on every start while it is off, and
+the Audit Log marks each admin sign-in that happened without a code.
+
 Admins sign in with a password plus an SMS code, and `SMS_PROVIDER=console` is refused in
 production, so a real SMS provider must be configured or admins cannot sign in. Twilio is built
 in (fill the `TWILIO_*` lines). SMS to Indian numbers needs the sender and message template

@@ -6,6 +6,7 @@ import { AuthError } from "next-auth";
 import { prisma } from "@/lib/prisma";
 import { errorFields, logger } from "@/lib/logger";
 import { recordAdminSignIn } from "@/lib/auditEvents";
+import { twoFactorEnabled } from "@/lib/twoFactorConfig";
 import { signIn } from "@/lib/auth";
 import {
   clientIpFromHeaders,
@@ -59,7 +60,7 @@ export async function loginAction(
 
   const { user } = result;
 
-  if (user.role === "ADMIN") {
+  if (user.role === "ADMIN" && twoFactorEnabled()) {
     if (!user.twoFactorPhone) {
       logger.warn("admin_login_blocked_no_phone", { email: user.email });
       return {
@@ -79,6 +80,15 @@ export async function loginAction(
     redirect("/admin/login/verify");
   }
 
+  if (user.role === "ADMIN") {
+    // Only reachable while TWO_FACTOR_AUTH=false. Leave a trace in both logs.
+    logger.warn("admin_login_without_2fa", { email: user.email, ip });
+    await recordAdminSignIn(
+      { id: user.id, name: user.name, email: user.email, role: user.role },
+      ip === "unknown" ? null : ip,
+      "Signed in with password only (two-factor is turned off)",
+    );
+  }
   logger.info("login_ok", { email: user.email, role: user.role });
   try {
     await signIn("credentials", { email, password, redirectTo });
