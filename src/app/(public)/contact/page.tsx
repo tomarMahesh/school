@@ -2,6 +2,8 @@ import { ContactForm } from "@/components/site/ContactForm";
 import { getSiteSettings } from "@/lib/settings";
 import { getPageContent } from "@/lib/pageContent";
 
+export const metadata = { title: "Contact Us" };
+
 export default async function ContactPage() {
   const [settings, content] = await Promise.all([
     getSiteSettings(),

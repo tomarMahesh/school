@@ -1,6 +1,8 @@
 import { prisma } from "@/lib/prisma";
 import { getCurrentAcademicYear } from "@/lib/academicYear";
 
+export const metadata = { title: "Classes" };
+
 const CARD_ACCENTS = [
   "from-[#0f3d63] to-[#154f80]",
   "from-[#154f80] to-[#1c5f8a]",

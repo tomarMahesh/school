@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useActionState } from "react";
 import { PersistentForm } from "@/components/PersistentForm";
 import { submitContactMessage } from "@/lib/actions/contact";
@@ -17,6 +18,13 @@ export function ContactForm() {
 
   return (
     <PersistentForm action={formAction} className="flex flex-col gap-4">
+      {/* Spam trap: invisible to people, tempting to bots. */}
+      <div aria-hidden="true" className="absolute -left-[9999px] h-0 w-0 overflow-hidden">
+        <label>
+          Website
+          <input name="website" tabIndex={-1} autoComplete="off" />
+        </label>
+      </div>
       <div className="grid gap-4 sm:grid-cols-2">
         <label className="flex flex-col gap-1 text-sm text-[#0f3d63]">
           Name
@@ -60,6 +68,13 @@ export function ContactForm() {
       >
         {pending ? "Sending..." : "Send Message"}
       </button>
+      <p className="text-xs text-[#0f3d63]/60">
+        We use these details only to reply to you. See our{" "}
+        <Link href="/privacy-policy" className="underline">
+          Privacy Policy
+        </Link>
+        .
+      </p>
     </PersistentForm>
   );
 }

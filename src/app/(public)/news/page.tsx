@@ -1,6 +1,8 @@
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 
+export const metadata = { title: "News & Events" };
+
 export default async function NewsListPage() {
   const posts = await prisma.post.findMany({
     where: { published: true },

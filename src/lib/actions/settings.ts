@@ -7,10 +7,10 @@ import { revalidatePath } from "next/cache";
 import { requirePermission } from "@/lib/permissions";
 import { prisma } from "@/lib/prisma";
 import { getSiteSettings } from "@/lib/settings";
+import { LOGO_DIR } from "@/lib/storage";
 
 type ActionState = { error?: string; success?: boolean };
 
-const LOGO_DIR = path.join(process.cwd(), "public", "uploads", "logo");
 const LOGO_URL_PREFIX = "/uploads/logo/";
 const MAX_LOGO_BYTES = 2 * 1024 * 1024;
 

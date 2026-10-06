@@ -4,6 +4,8 @@ import { cookies, headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { AuthError } from "next-auth";
 import { prisma } from "@/lib/prisma";
+import { errorFields, logger } from "@/lib/logger";
+import { recordAdminSignIn } from "@/lib/auditEvents";
 import { signIn } from "@/lib/auth";
 import {
   clientIpFromHeaders,
@@ -51,6 +53,7 @@ export async function loginAction(
   const ip = clientIpFromHeaders(await headers());
   const result = await verifyPassword(email, password, ip);
   if (!result.ok) {
+    logger.warn(result.reason === "locked" ? "login_locked" : "login_failed", { email, ip });
     return { error: result.reason === "locked" ? lockedMessage(result.retryAfterSec) : INVALID };
   }
 
@@ -58,6 +61,7 @@ export async function loginAction(
 
   if (user.role === "ADMIN") {
     if (!user.twoFactorPhone) {
+      logger.warn("admin_login_blocked_no_phone", { email: user.email });
       return {
         error:
           "Admin accounts need two-factor sign-in, but no phone number is set up for this account. Contact the system owner.",
@@ -67,13 +71,15 @@ export async function loginAction(
     try {
       challengeId = await createChallenge(user.id, user.twoFactorPhone);
     } catch (err) {
-      console.error("Could not send admin sign-in code:", err instanceof Error ? err.message : err);
+      logger.error("admin_code_send_failed", { email: user.email, ...errorFields(err) });
       return { error: "We couldn't send the verification code. Please try again shortly." };
     }
+    logger.info("admin_code_sent", { email: user.email });
     await setChallengeCookie(challengeId);
     redirect("/admin/login/verify");
   }
 
+  logger.info("login_ok", { email: user.email, role: user.role });
   try {
     await signIn("credentials", { email, password, redirectTo });
   } catch (err) {
@@ -103,6 +109,7 @@ export async function verifyOtpAction(
     data: { attempts: { increment: 1 } },
   });
   if (counted.count !== 1) {
+    logger.warn("admin_code_locked", { email: challenge.user.email });
     await prisma.loginChallenge.update({ where: { id: challenge.id }, data: { consumedAt: new Date() } });
     await clearChallengeCookie();
     return { error: "Too many incorrect codes. Please sign in again.", restart: true };
@@ -110,6 +117,7 @@ export async function verifyOtpAction(
 
   if (!otpMatches(challenge.id, code, challenge.otpHash)) {
     const left = OTP_MAX_ATTEMPTS - (challenge.attempts + 1);
+    logger.warn("admin_code_wrong", { email: challenge.user.email, attemptsLeft: Math.max(left, 0) });
     if (left <= 0) {
       await prisma.loginChallenge.update({ where: { id: challenge.id }, data: { consumedAt: new Date() } });
       await clearChallengeCookie();
@@ -124,6 +132,11 @@ export async function verifyOtpAction(
   });
   await clearChallengeCookie();
 
+  logger.info("admin_login_success", { email: challenge.user.email });
+  await recordAdminSignIn(
+    { id: challenge.user.id, name: challenge.user.name, email: challenge.user.email, role: challenge.user.role },
+    clientIpFromHeaders(await headers()),
+  );
   try {
     await signIn("credentials", { challengeId: challenge.id, redirectTo: "/admin" });
   } catch (err) {
@@ -157,7 +170,7 @@ export async function resendOtpAction(
   try {
     await reissueCode(challenge.id, challenge.user.twoFactorPhone);
   } catch (err) {
-    console.error("Could not resend admin sign-in code:", err instanceof Error ? err.message : err);
+    logger.error("admin_code_resend_failed", { email: challenge.user.email, ...errorFields(err) });
     return { error: "We couldn't send the verification code. Please try again shortly." };
   }
   return { info: "A new code has been sent." };

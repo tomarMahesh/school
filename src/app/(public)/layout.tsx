@@ -1,9 +1,23 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import { getSiteSettings } from "@/lib/settings";
 import { SiteNav } from "@/components/site/SiteNav";
 import { FloatingActions } from "@/components/site/FloatingActions";
 import { SchoolLogo } from "@/components/site/SchoolLogo";
+
+// Every public page reads the database (settings, CMS content, news), so render
+// per request: the build must not need a database, and edits must show at once.
+export const dynamic = "force-dynamic";
+
+export async function generateMetadata(): Promise<Metadata> {
+  const { schoolName } = await getSiteSettings();
+  return {
+    title: { default: schoolName, template: `%s | ${schoolName}` },
+    description: `Official website of ${schoolName}: about the school, classes, gallery, news and contact details.`,
+    openGraph: { siteName: schoolName, type: "website", locale: "en_IN" },
+  };
+}
 
 export default async function PublicLayout({
   children,
@@ -47,6 +61,7 @@ export default async function PublicLayout({
               <li><Link href="/gallery">Gallery</Link></li>
               <li><Link href="/contact">Contact</Link></li>
               <li><Link href="/news">News &amp; Events</Link></li>
+              <li><Link href="/privacy-policy">Privacy Policy</Link></li>
               {pages.map((page) => (
                 <li key={page.slug}>
                   <Link href={`/${page.slug}`}>{page.title}</Link>

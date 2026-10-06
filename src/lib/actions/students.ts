@@ -9,6 +9,7 @@ import { Prisma } from "@/generated/prisma/client";
 import type { Gender } from "@/generated/prisma/enums";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { errorFields, logger } from "@/lib/logger";
 import { sendPasswordSetupEmail } from "@/lib/passwordSetup";
 
 /** A random, never-stored-in-plaintext password for a brand-new account --
@@ -94,7 +95,8 @@ export async function createStudent(
   let emailStatus: "sent" | "failed" = "sent";
   try {
     await sendPasswordSetupEmail({ userId: studentUserId, name, email, role: "STUDENT" });
-  } catch {
+  } catch (err) {
+    logger.error("setup_email_failed", { email, ...errorFields(err) });
     emailStatus = "failed";
   }
 

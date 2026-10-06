@@ -30,6 +30,7 @@ import {
   BadgeCheck,
   Images,
   LayoutTemplate,
+  History,
 } from "lucide-react";
 import type { PermissionKey } from "@/lib/permissions";
 import {
@@ -148,6 +149,8 @@ const NAV_GROUPS: { label: string; items: NavItem[] }[] = [
     label: "Administration",
     items: [
       { href: "/admin/roles", label: "Role & Access", icon: ShieldCheck },
+      // No `permission`: only ADMIN sees the audit trail, and it is not grantable.
+      { href: "/admin/audit-log", label: "Audit Log", icon: History },
       {
         href: "/admin/settings",
         label: "Settings",

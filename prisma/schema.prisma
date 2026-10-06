@@ -46,6 +46,32 @@ model User {
   @@index([role])
 }
 
+// Who changed what. One row per create/update/delete made by a signed-in
+// person (see src/lib/audit.ts); bulk teacher edits such as marking a whole
+// class are grouped into one row with a count. There is deliberately no
+// foreign key to User: the history must outlive a deleted account, so the
+// actor's name/email/role are copied in. `changes` is JSON; secrets are
+// replaced by "[changed]" and never stored.
+model AuditLog {
+  id         String   @id @default(cuid())
+  createdAt  DateTime @default(now())
+  actorId    String?
+  actorName  String?
+  actorEmail String?
+  actorRole  String?
+  action     String
+  entity     String
+  entityId   String?
+  label      String?
+  changes    String?  @db.LongText
+  count      Int      @default(1)
+  ip         String?
+
+  @@index([createdAt])
+  @@index([entity, entityId])
+  @@index([actorId, createdAt])
+}
+
 // Every password check, kept to throttle brute-force guessing. `identifier`
 // is the lowercased email; password-reset requests use "reset:<email>" and
 // "reset-ip:<ip>" so they never count toward a login lockout.

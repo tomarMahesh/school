@@ -1,0 +1,99 @@
+# Putting the school website live
+
+One small Linux server runs everything: the website, the MySQL database and automatic HTTPS
+(Docker Compose). Typical cost: roughly ₹500-1,000 a month, plus the domain.
+
+## 1. Before you start
+- A **domain** you own.
+- A **2 GB RAM** Linux server (Ubuntu 24.04), ideally in Mumbai or Bangalore. 1 GB is too small.
+- **SMS for admin sign-in codes** must work BEFORE the first admin login (see "SMS" below).
+- A Gmail App Password (or other SMTP login) for password emails.
+
+## 2. Point the domain at the server
+At your domain registrar's DNS page add two **A records** to the server's IP address:
+`@` (the bare domain) and `www`. Wait until they resolve (usually minutes).
+
+## 3. Prepare the server (once)
+```bash
+ssh ubuntu@SERVER_IP
+curl -fsSL https://get.docker.com | sudo sh
+sudo usermod -aG docker $USER      # then log out and back in
+sudo ufw allow 22 && sudo ufw allow 80 && sudo ufw allow 443 && sudo ufw --force enable
+sudo fallocate -l 2G /swapfile && sudo chmod 600 /swapfile && sudo mkswap /swapfile && sudo swapon /swapfile
+echo '/swapfile none swap sw 0 0' | sudo tee -a /etc/fstab
+```
+
+## 4. Get the code and configure it
+```bash
+git clone https://github.com/tomarMahesh/school.git && cd school
+git checkout main
+cp .env.example .env && nano .env
+```
+Fill in `.env` (the file explains each line). Make secrets with `openssl rand -hex 32`
+(use letters/digits only for the two MySQL passwords). **Copy `.env` somewhere safe
+(password manager) -- especially `DATA_ENCRYPTION_KEY`.**
+
+## 5. Start it
+```bash
+docker compose up -d --build
+docker compose logs -f app        # wait for "Ready", then Ctrl+C
+```
+The database tables are created automatically. Visit `https://yourdomain` -- the HTTPS
+certificate is issued on first visit (takes a few seconds).
+
+## 6. Create your admin
+```bash
+docker compose exec app npx tsx scripts/create-admin.ts you@example.com "Your Name" 98XXXXXXXX
+```
+Open the link it prints and choose a strong password. Then sign in at `/admin/login`; a code
+is texted to that phone. (Use this instead of the demo seed -- the seed uses a known password.)
+
+## 7. Backups (do this on day one)
+```bash
+chmod +x scripts/backup.sh && ./scripts/backup.sh          # test it once
+crontab -e    # add:   0 2 * * * /home/ubuntu/school/scripts/backup.sh
+```
+Backups land in `backups/` (14 days kept). **Also copy them off the server** (another cloud
+drive, e.g. with `rclone`) -- a backup on the same machine is lost with the machine.
+
+Restore the database: `gunzip -c backups/db_X.sql.gz | docker compose exec -T db mysql -uroot -p"ROOT_PASSWORD" school_portal`
+
+## 8. Updating the site later
+```bash
+cd school && git pull && docker compose up -d --build
+```
+
+## SMS for admin codes
+Admins sign in with a password plus an SMS code, and `SMS_PROVIDER=console` is refused in
+production, so a real SMS provider must be configured or admins cannot sign in. Twilio is built
+in (fill the `TWILIO_*` lines). SMS to Indian numbers needs the sender and message template
+registered under India's **DLT** rules, which can take days -- start that early. Ask for another
+provider (MSG91, Fast2SMS) or an authenticator-app option if that suits better.
+
+## Before you announce the site
+- **Privacy Policy** (`/privacy-policy`): read it through and have the school's legal adviser
+  review it. It states, for example, that student photos are published only with a parent's
+  consent -- make sure that is how the school really works. Update the "Last updated" date at the
+  top of `src/app/(public)/privacy-policy/page.tsx` whenever the wording changes. The address,
+  phone and email in it come from Settings.
+- **Audit Log** (admin sidebar): records who created, changed or deleted what, with before/after
+  values, plus admin sign-ins. Passwords, Aadhaar numbers and sign-in phones are never stored in
+  it. It is read-only in the app. Keep it in your backups (it lives in the database).
+
+## Watching the site (do this once it is live)
+- **Uptime alerts:** add a free monitor (e.g. UptimeRobot) for `https://yourdomain/api/health`
+  every 5 minutes with email alerts. It answers 200 only when the site can reach the database.
+- **Errors:** every server error is logged as one JSON line. Visitors see a "Reference" code on
+  the error page; find that exact error with `docker compose logs app | grep REFERENCE_CODE`.
+  All errors: `docker compose logs app | grep '"level":"error"'`.
+- **Security events:** `docker compose logs app | grep -E 'login_failed|login_locked|admin_code_wrong'`
+  shows failed sign-ins, lockouts and wrong admin codes (never passwords or codes).
+- **Won't start?** If the app keeps restarting, run `docker compose logs app`. A `config_invalid`
+  line says which setting in `.env` is missing or wrong (AUTH_SECRET, DATA_ENCRYPTION_KEY, ...).
+  A `config_warning` line is not fatal but needs attention (e.g. SMS not set up).
+- Logs rotate automatically (5 files of 10 MB per container), so they cannot fill the disk.
+
+## Useful commands
+- Status: `docker compose ps`   Logs: `docker compose logs --tail 100 app`
+- Restart: `docker compose restart app`
+- Unlock/replace an admin's phone: `docker compose exec app npx tsx scripts/set-admin-phone.ts admin@email 98XXXXXXXX`
