@@ -7,10 +7,10 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { GALLERY_DIR as UPLOAD_DIR } from "@/lib/storage";
 
 type ActionState = { error?: string };
 
-const UPLOAD_DIR = path.join(process.cwd(), "public", "uploads", "gallery");
 const MAX_FILE_BYTES = 8 * 1024 * 1024;
 
 async function requireAdmin() {

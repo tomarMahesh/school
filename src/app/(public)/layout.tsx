@@ -5,6 +5,10 @@ import { SiteNav } from "@/components/site/SiteNav";
 import { FloatingActions } from "@/components/site/FloatingActions";
 import { SchoolLogo } from "@/components/site/SchoolLogo";
 
+// Every public page reads the database (settings, CMS content, news), so render
+// per request: the build must not need a database, and edits must show at once.
+export const dynamic = "force-dynamic";
+
 export default async function PublicLayout({
   children,
 }: {
