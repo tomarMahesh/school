@@ -5,6 +5,7 @@ import { after } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { clientIpFromHeaders } from "@/lib/loginSecurity";
 import { sendPasswordSetupEmail } from "@/lib/passwordSetup";
+import { errorFields, logger } from "@/lib/logger";
 
 export type ResetState = { sent?: boolean; error?: string };
 
@@ -53,6 +54,10 @@ export async function requestPasswordReset(
     after(async () => {
       try {
         const user = await prisma.user.findUnique({ where: { email } });
+        logger.info("password_reset_requested", {
+          email,
+          sent: Boolean(user && user.role !== "ADMIN"),
+        });
         if (!user || user.role === "ADMIN") return;
         await sendPasswordSetupEmail({
           userId: user.id,
@@ -62,7 +67,7 @@ export async function requestPasswordReset(
           purpose: "reset",
         });
       } catch (err) {
-        console.error("Password reset email failed:", err instanceof Error ? err.message : err);
+        logger.error("password_reset_email_failed", { email, ...errorFields(err) });
       }
     });
   }

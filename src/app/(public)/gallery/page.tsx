@@ -1,5 +1,7 @@
 import { prisma } from "@/lib/prisma";
 
+export const metadata = { title: "Gallery" };
+
 export default async function GalleryPage() {
   const images = await prisma.galleryImage.findMany({
     orderBy: [{ order: "asc" }, { createdAt: "desc" }],

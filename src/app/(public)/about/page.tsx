@@ -2,6 +2,8 @@ import Image from "next/image";
 import { fillSchoolName, getPageContent } from "@/lib/pageContent";
 import { getSiteSettings } from "@/lib/settings";
 
+export const metadata = { title: "About Us" };
+
 export default async function AboutPage() {
   const [settings, content] = await Promise.all([
     getSiteSettings(),

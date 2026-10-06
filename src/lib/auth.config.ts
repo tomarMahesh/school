@@ -2,7 +2,8 @@ import type { NextAuthConfig } from "next-auth";
 import type { Role } from "@/generated/prisma/enums";
 
 export const authConfig = {
-  session: { strategy: "jwt" },
+  // A school day: stolen or forgotten sessions expire the same evening.
+  session: { strategy: "jwt", maxAge: 60 * 60 * 12 },
   providers: [],
   callbacks: {
     jwt({ token, user }) {

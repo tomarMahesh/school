@@ -70,6 +70,19 @@ in (fill the `TWILIO_*` lines). SMS to Indian numbers needs the sender and messa
 registered under India's **DLT** rules, which can take days -- start that early. Ask for another
 provider (MSG91, Fast2SMS) or an authenticator-app option if that suits better.
 
+## Watching the site (do this once it is live)
+- **Uptime alerts:** add a free monitor (e.g. UptimeRobot) for `https://yourdomain/api/health`
+  every 5 minutes with email alerts. It answers 200 only when the site can reach the database.
+- **Errors:** every server error is logged as one JSON line. Visitors see a "Reference" code on
+  the error page; find that exact error with `docker compose logs app | grep REFERENCE_CODE`.
+  All errors: `docker compose logs app | grep '"level":"error"'`.
+- **Security events:** `docker compose logs app | grep -E 'login_failed|login_locked|admin_code_wrong'`
+  shows failed sign-ins, lockouts and wrong admin codes (never passwords or codes).
+- **Won't start?** If the app keeps restarting, run `docker compose logs app`. A `config_invalid`
+  line says which setting in `.env` is missing or wrong (AUTH_SECRET, DATA_ENCRYPTION_KEY, ...).
+  A `config_warning` line is not fatal but needs attention (e.g. SMS not set up).
+- Logs rotate automatically (5 files of 10 MB per container), so they cannot fill the disk.
+
 ## Useful commands
 - Status: `docker compose ps`   Logs: `docker compose logs --tail 100 app`
 - Restart: `docker compose restart app`

@@ -7,6 +7,7 @@ import bcrypt from "bcryptjs";
 import { Prisma, Role } from "@/generated/prisma/client";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { errorFields, logger } from "@/lib/logger";
 import { sendPasswordSetupEmail } from "@/lib/passwordSetup";
 import { encryptField, hashField } from "@/lib/fieldCrypto";
 
@@ -127,7 +128,8 @@ export async function createStaff(
       email: fields.email,
       role: fields.role,
     });
-  } catch {
+  } catch (err) {
+    logger.error("setup_email_failed", { email: fields.email, ...errorFields(err) });
     emailStatus = "failed";
   }
 
