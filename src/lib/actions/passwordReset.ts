@@ -22,7 +22,7 @@ async function recentCount(identifier: string) {
 // Asks for a password-reset email. The answer is always the same message
 // whether or not the address has an account, so this can't be used to find
 // out who is registered. Admin accounts are deliberately never emailed --
-// their access is protected by the SMS code and is recovered by the system
+// their access is protected by two-factor sign-in and is recovered by the system
 // owner. Requests are rate-limited (silently) to stop email flooding.
 export async function requestPasswordReset(
   _prev: ResetState,

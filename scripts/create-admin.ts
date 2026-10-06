@@ -3,17 +3,21 @@
 // a one-time link, and the phone receives their sign-in codes.
 //
 // Usage:  npx tsx scripts/create-admin.ts <email> "<Full Name>" <phone>
+// The phone may be left out only while TWO_FACTOR_AUTH=false in .env.
 import "dotenv/config";
 import bcrypt from "bcryptjs";
 import { randomBytes } from "node:crypto";
 import { prisma } from "../src/lib/prisma";
 import { issuePasswordSetupToken } from "../src/lib/passwordSetup";
 import { maskPhone, normalizePhone } from "../src/lib/sms";
+import { twoFactorEnabled } from "../src/lib/twoFactorConfig";
 
 async function main() {
   const [rawEmail, name, rawPhone] = process.argv.slice(2);
-  if (!rawEmail || !name || !rawPhone) {
+  const needPhone = twoFactorEnabled();
+  if (!rawEmail || !name || (needPhone && !rawPhone)) {
     console.error('Usage: npx tsx scripts/create-admin.ts <email> "<Full Name>" <phone>');
+    if (!needPhone) console.error("(the phone is optional while TWO_FACTOR_AUTH=false)");
     process.exit(1);
   }
 
@@ -22,8 +26,8 @@ async function main() {
     console.error("That doesn't look like a valid email address.");
     process.exit(1);
   }
-  const phone = normalizePhone(rawPhone);
-  if (!phone) {
+  const phone = rawPhone ? normalizePhone(rawPhone) : null;
+  if (rawPhone && !phone) {
     console.error("That doesn't look like a valid phone number.");
     process.exit(1);
   }
@@ -46,7 +50,12 @@ async function main() {
   const token = await issuePasswordSetupToken(user.id, 24);
   const base = (process.env.APP_URL || "http://localhost:3020").replace(/\/$/, "");
 
-  console.log(`Admin created: ${user.email} (codes go to ${maskPhone(phone)})`);
+  if (phone) {
+    console.log(`Admin created: ${user.email} (codes go to ${maskPhone(phone)})`);
+  } else {
+    console.log(`Admin created: ${user.email} (no phone set; two-factor is off)`);
+    console.log("Before turning TWO_FACTOR_AUTH on, add a phone with: npm run admin:set-phone -- <email> <phone>");
+  }
   console.log("");
   console.log("Open this link within 24 hours to choose the password:");
   console.log(`${base}/set-password?token=${token}`);

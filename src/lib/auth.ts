@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { authConfig } from "@/lib/auth.config";
 import { clientIpFromHeaders, verifyPassword } from "@/lib/loginSecurity";
 import { VERIFIED_GRACE_MS } from "@/lib/twoFactor";
+import { twoFactorEnabled } from "@/lib/twoFactorConfig";
 
 type AuthUser = { id: string; email: string; name: string; role: "ADMIN" | "PRINCIPAL" | "TEACHER" | "STAFF" | "STUDENT" };
 
@@ -24,8 +25,10 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       // The one place a session can be created, and this endpoint is public
       // (/api/auth/callback/credentials), so every rule is enforced here
       // rather than trusting the login pages:
-      //  - ADMIN can never sign in with a password alone. They need a
-      //    challenge whose SMS code was verified (see loginSecurity/twoFactor).
+      //  - While TWO_FACTOR_AUTH is on (the default), ADMIN can never sign in
+      //    with a password alone. They need a challenge whose SMS code was
+      //    verified (see loginSecurity/twoFactor). Setting TWO_FACTOR_AUTH=false
+      //    in .env is the only thing that lifts this.
       //  - Password attempts are throttled (see loginSecurity).
       authorize: async (credentials, request) => {
         const challengeId = credentials?.challengeId as string | undefined;
@@ -59,7 +62,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         const ip = clientIpFromHeaders(request.headers);
         const result = await verifyPassword(email, password, ip);
         if (!result.ok) return null;
-        if (result.user.role === "ADMIN") return null;
+        if (result.user.role === "ADMIN" && twoFactorEnabled()) return null;
 
         return toAuthUser(result.user);
       },
