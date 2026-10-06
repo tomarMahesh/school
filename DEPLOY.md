@@ -70,6 +70,16 @@ in (fill the `TWILIO_*` lines). SMS to Indian numbers needs the sender and messa
 registered under India's **DLT** rules, which can take days -- start that early. Ask for another
 provider (MSG91, Fast2SMS) or an authenticator-app option if that suits better.
 
+## Before you announce the site
+- **Privacy Policy** (`/privacy-policy`): read it through and have the school's legal adviser
+  review it. It states, for example, that student photos are published only with a parent's
+  consent -- make sure that is how the school really works. Update the "Last updated" date at the
+  top of `src/app/(public)/privacy-policy/page.tsx` whenever the wording changes. The address,
+  phone and email in it come from Settings.
+- **Audit Log** (admin sidebar): records who created, changed or deleted what, with before/after
+  values, plus admin sign-ins. Passwords, Aadhaar numbers and sign-in phones are never stored in
+  it. It is read-only in the app. Keep it in your backups (it lives in the database).
+
 ## Watching the site (do this once it is live)
 - **Uptime alerts:** add a free monitor (e.g. UptimeRobot) for `https://yourdomain/api/health`
   every 5 minutes with email alerts. It answers 200 only when the site can reach the database.

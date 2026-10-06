@@ -61,6 +61,7 @@ export default async function PublicLayout({
               <li><Link href="/gallery">Gallery</Link></li>
               <li><Link href="/contact">Contact</Link></li>
               <li><Link href="/news">News &amp; Events</Link></li>
+              <li><Link href="/privacy-policy">Privacy Policy</Link></li>
               {pages.map((page) => (
                 <li key={page.slug}>
                   <Link href={`/${page.slug}`}>{page.title}</Link>

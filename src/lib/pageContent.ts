@@ -160,7 +160,7 @@ function merge<T>(defaults: T, stored: unknown): T {
 }
 
 export async function getPageContent<K extends PageKey>(key: K): Promise<PageContentMap[K]> {
-  const row = await prisma.pageContent.findUnique({ where: { key } });
+  const row = await prisma.pageContent.findUnique({ where: { key: key as string } });
   if (!row) return DEFAULTS[key];
   try {
     return merge(DEFAULTS[key], JSON.parse(row.data));

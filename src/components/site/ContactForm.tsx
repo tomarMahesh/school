@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useActionState } from "react";
 import { PersistentForm } from "@/components/PersistentForm";
 import { submitContactMessage } from "@/lib/actions/contact";
@@ -67,6 +68,13 @@ export function ContactForm() {
       >
         {pending ? "Sending..." : "Send Message"}
       </button>
+      <p className="text-xs text-[#0f3d63]/60">
+        We use these details only to reply to you. See our{" "}
+        <Link href="/privacy-policy" className="underline">
+          Privacy Policy
+        </Link>
+        .
+      </p>
     </PersistentForm>
   );
 }

@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import { AuthError } from "next-auth";
 import { prisma } from "@/lib/prisma";
 import { errorFields, logger } from "@/lib/logger";
+import { recordAdminSignIn } from "@/lib/auditEvents";
 import { signIn } from "@/lib/auth";
 import {
   clientIpFromHeaders,
@@ -132,6 +133,10 @@ export async function verifyOtpAction(
   await clearChallengeCookie();
 
   logger.info("admin_login_success", { email: challenge.user.email });
+  await recordAdminSignIn(
+    { id: challenge.user.id, name: challenge.user.name, email: challenge.user.email, role: challenge.user.role },
+    clientIpFromHeaders(await headers()),
+  );
   try {
     await signIn("credentials", { challengeId: challenge.id, redirectTo: "/admin" });
   } catch (err) {

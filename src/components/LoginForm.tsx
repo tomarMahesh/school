@@ -57,6 +57,11 @@ export function LoginForm({
           </Link>
         )}
       </PersistentForm>
+      <p className="mt-4 text-center text-xs opacity-60">
+        <Link href="/privacy-policy" className="underline">
+          Privacy Policy
+        </Link>
+      </p>
     </div>
   );
 }
